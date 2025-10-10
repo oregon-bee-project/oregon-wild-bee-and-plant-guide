@@ -1,4 +1,4 @@
-🐝 Bee and Plant Data Exploration — Computer Science Capstone Project
+🐝 Bee and Plant Data Exploration — Computer Science Capstone Project 🐝
 
 Overview
 ---------------------------------------------------------------------
