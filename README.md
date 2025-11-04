@@ -36,3 +36,23 @@ Fork is an awesome way to keep track of commits, branches, and the overall workf
 - The `data` folder will hold anything relating to the data for the model, this will make it easier to use in model development
 
 - The `docs` folder will hold documents for assignments and other aspects of the projects. It is mainly used to keep everything clean and organized
+
+# Running the app locally
+
+**Prerequisite:** Make sure Node.js (version >= 18) is installed on your machine.  
+You can check by running:
+```
+node -v
+```
+
+1. Clone the repository (if not already done).
+2. From the project root, navigate to `frontend` and install dependencies:
+```
+cd src/frontend
+npm install
+```
+3. Run the dev server:
+```
+npm run dev
+```
+4. Once the server is running, press `o + enter` to open the app in your browser (`q + enter` will stop the dev server).
