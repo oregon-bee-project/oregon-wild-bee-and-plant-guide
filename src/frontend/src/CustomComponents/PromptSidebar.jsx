@@ -12,6 +12,7 @@ const PromptSidebar = () => {
       flexDirection="column"
       justifyContent="space-between"
     >
+      {/* vertical stack of labels, input fields, buttons, etc. */}
       <VStack align="stretch" spacing={4}>
         <Text>Prompt Sidebar</Text>
         <Input placeholder="Enter your prompt here" />
