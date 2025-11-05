@@ -9,10 +9,10 @@ def main():
     socket1.connect(f"tcp://localhost:{PORT1}")
     
     # do something
-    pass
+    coordinates = "44.5646, -123.2620"
     
     # send out microservice request
-    socket1.send_string("search_location_44°33′52″N, 123°15′43″W")
+    socket1.send_string(f"search_location_{coordinates}") # must be in decimal degrees
     
     # receive microservice df
     response_df = pdzmq.recv_dataframe(socket1)
