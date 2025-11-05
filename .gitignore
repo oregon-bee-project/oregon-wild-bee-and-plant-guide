@@ -1,1 +1,4 @@
+# Virtual Environments (Python dependencies)
 .venv
+# Node modules
+node_modules/
