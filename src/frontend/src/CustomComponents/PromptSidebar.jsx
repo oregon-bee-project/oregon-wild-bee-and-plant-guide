@@ -5,7 +5,7 @@ const PromptSidebar = () => {
     <Box
       w="300px"
       h="100%"
-      borderRadius={8}
+      borderRadius="md"
       borderWidth="2px"
       p={4}
       display="flex"
@@ -15,7 +15,7 @@ const PromptSidebar = () => {
       <VStack align="stretch" spacing={4}>
         <Text>Prompt Sidebar</Text>
         <Input placeholder="Enter your prompt here" />
-        <Button variant="subtle">Submit</Button>
+        <Button>Submit</Button>
       </VStack>
     </Box>
   );
