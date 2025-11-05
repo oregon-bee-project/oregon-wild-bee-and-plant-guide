@@ -4,7 +4,6 @@ import {
   Image,
   Text,
   Link,
-  IconButton,
   HStack,
   Spacer,
 } from '@chakra-ui/react';

@@ -1,10 +1,15 @@
-import { Text } from "@chakra-ui/react";
+import { Flex } from "@chakra-ui/react";
+import PromptSidebar from "../CustomComponents/PromptSidebar";
 
 // This is the main webpage content - everything below the header
 
 const MainContent = () => {
   return (
-    <Text>This will be the main content.</Text>
+    <>
+      <Flex h="100%" p="10px">
+        <PromptSidebar />
+      </Flex>
+    </>
   );
 };
 
