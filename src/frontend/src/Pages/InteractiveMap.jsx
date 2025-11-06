@@ -19,7 +19,7 @@ const InteractiveMap = () => {
       </Box>
 
       {/* button below map */}
-      <Button>
+      <Button bg="green.400">
         <LuMapPin /> Set Location
       </Button>
     </Flex>
