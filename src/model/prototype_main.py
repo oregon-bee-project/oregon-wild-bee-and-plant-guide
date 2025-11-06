@@ -1,6 +1,4 @@
 import zmq
-import pandas_zmq as pdzmq
-import pandas as pd
 
 PORT1 = 5556
 
@@ -11,30 +9,37 @@ def main():
     
     while(1):
         # do something
-        coordinates = "44, -123"
+        coordinates = "44, -123" # must be in decimal degrees
         
         # send out microservice request
-        socket1.send_string(f"search_location_{coordinates}") # must be in decimal degrees
+        request_json = {
+            "request": "search_location",
+            "arg1": coordinates,
+            "error": False,
+            "err_msg" : ""
+        }
         
-        # receive microservice df
-        response_df = pdzmq.recv_dataframe(socket1)
-        if response_df.empty:
-            print("Microservice could not find info for your location")
+        socket1.send_json(request_json) 
+        
+        # receive microservice json
+        response_json = socket1.recv_json()
+        
+        # check if error
+        if response_json["error"]:
+            print(f"ERROR - {response_json['err_msg']}")
         else:
-            print(response_df)
+            print(len(response_json["response"]))
         
+        # run again or end
         i = input("e to end: ")
         if(i == "e"):
             break
         
-    
     # terminate
-    socket1.send_string("end")
-    socket1.recv_string()
+    socket1.send_json({"request":"end"})
+    socket1.recv_json()
     socket1.close()
     context1.term()
-    
-
     
 
 if __name__ ==  "__main__":
