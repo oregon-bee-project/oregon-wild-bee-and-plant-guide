@@ -31,32 +31,29 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          # UPDATED: Path to lock file
-          cache-dependency-path: src/package-lock.json
+          # This path is correct:
+          cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
         run: npm install
-        # UPDATED: Working directory is now ./src
-        working-directory: ./src
+        # All npm commands run from here:
+        working-directory: ./src/frontend
 
       - name: Run tests
         run: npm test
-        # UPDATED: Working directory is now ./src
-        working-directory: ./src
+        working-directory: ./src/frontend
 
       - name: Build the app
         run: npm run build
-        # UPDATED: Working directory is now ./src
-        working-directory: ./src
+        working-directory: ./src/frontend
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # UPDATED: The 'dist' folder is now at ./src/dist
-          path: ./src/dist
+          # The 'dist' folder is created inside 'src/frontend'
+          path: ./src/frontend/dist
 
       # --- Python/Backend Steps ---
-      # (Paths for backend remain the same)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
