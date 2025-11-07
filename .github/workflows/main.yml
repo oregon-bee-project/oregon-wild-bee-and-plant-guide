@@ -5,25 +5,22 @@ name: React and Python CI & Full-Stack Deploy
 on:
   push:
     branches: [main]
-  # Trigger on pull requests to 'main'
   pull_request:
     branches: [main]
-  # Allows you to manually run this workflow from the Actions tab
   workflow_dispatch:
 
-# Grant permissions for the deploy job
+# Grant permissions
 permissions:
   contents: read
-  pages: write # Required for GitHub Pages deploy
-  id-token: write # Required for auth
-  pull-requests: write # Required for posting the preview URL comment
+  pages: write
+  id-token: write
+  pull-requests: write
 
 # 2. What jobs to run
 jobs:
-  # The "CI" part: build and test
   build:
     name: Build & Test
-    runs-on: ubuntu-latest # <-- This job has it
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -34,26 +31,32 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: src/frontend/package-lock.json
+          # UPDATED: Path to lock file
+          cache-dependency-path: src/package-lock.json
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./src/frontend
+        # UPDATED: Working directory is now ./src
+        working-directory: ./src
 
       - name: Run tests
         run: npm test
-        working-directory: ./src/frontend
+        # UPDATED: Working directory is now ./src
+        working-directory: ./src
 
       - name: Build the app
         run: npm run build
-        working-directory: ./src/frontend
+        # UPDATED: Working directory is now ./src
+        working-directory: ./src
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./src/frontend/dist # Use 'dist' for Vite
+          # UPDATED: The 'dist' folder is now at ./src/dist
+          path: ./src/dist
 
       # --- Python/Backend Steps ---
+      # (Paths for backend remain the same)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -67,17 +70,10 @@ jobs:
           pip install -r requirements.txt
         working-directory: ./src/backend
 
-      # (Skipping Python tests as requested)
-      # - name: (Backend) Run tests (Pytest)
-      #   run: pytest
-      #   working-directory: ./src/backend/model
-
   # 3. The "CD" part: deploy to GitHub Pages
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages
     needs: build
-
-    # Run on a push to main (production) OR on any pull request (preview)
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
 
     environment:
@@ -85,7 +81,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
@@ -95,12 +90,9 @@ jobs:
   deploy-backend:
     name: Deploy Backend to Render
     needs: build
-
-    # Only run on a push to main OR a manual dispatch (to protect production)
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
 
     runs-on: ubuntu-latest
-
     steps:
       - name: Trigger Render Deploy Hook
         run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
