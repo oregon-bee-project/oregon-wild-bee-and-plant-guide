@@ -1,19 +1,25 @@
 # Name of your workflow
-name: React and Python CI
+name: React and Python CI & Full-Stack Deploy
 
 # 1. When to run the workflow
 on:
-  # Run on pushes to the 'main' branch
   push:
     branches: [main]
-  # Run on pull requests targeting the 'main' branch
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Grant permissions
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
 
 # 2. What jobs to run
 jobs:
   build:
-    name: Build React App
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -25,12 +31,12 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          # Path to the lock file is now nested
+          # This path is correct:
           cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
-        # CRITICAL: New working directory path
+        run: npm install
+        # All npm commands run from here:
         working-directory: ./src/frontend
 
       - name: Run tests
@@ -44,7 +50,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # The build output is inside the frontend folder
+          # The 'dist' folder is created inside 'src/frontend'
           path: ./src/frontend/dist
 
       # --- Python/Backend Steps ---
@@ -53,44 +59,37 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
-          # Path to the requirements file is now nested
           cache-dependency-path: src/backend/requirements.txt
 
       - name: (Backend) Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        # CRITICAL: Set to the folder containing requirements.txt
         working-directory: ./src/backend
 
-      # - name: (Backend) Run tests
-      #   run: pytest
-      #   # CRITICAL: Set to the folder containing your test files
-      #   working-directory: ./src/backend/model
+  # 3. The "CD" part: deploy to GitHub Pages
+  deploy-frontend:
+    name: Deploy Frontend to GitHub Pages
+    needs: build
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
 
-  # ... rest of the deploy job
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
-  # # The "CD" part: deploy
-  # deploy:
-  #   name: Deploy
-  #   # This job needs 'build-and-test' to finish successfully
-  #   needs: build-and-test
-  #   # Only run this job on a push to the 'main' branch
-  #   # (i.e., don't run on pull requests)
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-  #   runs-on: ubuntu-latest
+  # 4. The "CD" part: deploy to Render
+  deploy-backend:
+    name: Deploy Backend to Render
+    needs: build
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
 
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v4
-
-  #     # --- Deployment Steps ---
-  #     # This is where you add the steps for YOUR hosting provider
-  #     # Examples: Vercel, Heroku, AWS, DigitalOcean, etc.
-
-  #     - name: Deployment
-  #       run: |
-  #         echo "Deploying to production..."
-  #         aws s3 sync ./frontend/build s3://deployment_test --delete
-  #         echo "Deployment complete!"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
