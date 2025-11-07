@@ -23,7 +23,7 @@ jobs:
   # The "CI" part: build and test
   build:
     name: Build & Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # <-- This job has it
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
           cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install # Using 'install' to bypass lockfile errors
+        run: npm install
         working-directory: ./src/frontend
 
       - name: Run tests
@@ -81,4 +81,26 @@ jobs:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
 
     environment:
-      name: github
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # 4. The "CD" part: deploy to Render
+  deploy-backend:
+    name: Deploy Backend to Render
+    needs: build
+
+    # Only run on a push to main OR a manual dispatch (to protect production)
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
