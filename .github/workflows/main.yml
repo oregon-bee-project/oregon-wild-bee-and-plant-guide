@@ -1,5 +1,5 @@
 # Name of your workflow
-name: React and Python CI/CD
+name: React and Python CI
 
 # 1. When to run the workflow
 on:
