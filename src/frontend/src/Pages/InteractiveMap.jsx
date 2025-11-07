@@ -13,7 +13,7 @@ const InteractiveMap = () => {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "/custom-map-style.json",
+      style: "./custom-map-style.json",
       center: [-120, 44],
       zoom: 6,
     });
