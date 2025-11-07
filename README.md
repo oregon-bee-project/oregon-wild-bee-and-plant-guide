@@ -10,6 +10,8 @@ The project integrates data science, machine learning, and web development to pr
 
 ## Fork
 
+### **note:** If your working branch isn't showing up in the repo to merge but you have created it locally, run `git push --set-upstream origin <your-branch-name>` in your terminal to have it track to origin and you should be good
+
 Fork is an awesome way to keep track of commits, branches, and the overall workflow. It is used commonly in the industry
 
 ### How to use
@@ -41,18 +43,23 @@ Fork is an awesome way to keep track of commits, branches, and the overall workf
 
 **Prerequisite:** Make sure Node.js (version >= 18) is installed on your machine.  
 You can check by running:
+
 ```
 node -v
 ```
 
 1. Clone the repository (if not already done).
 2. From the project root, navigate to `frontend` and install dependencies:
+
 ```
 cd src/frontend
 npm install
 ```
+
 3. Run the dev server:
+
 ```
 npm run dev
 ```
+
 4. Once the server is running, press `o + enter` to open the app in your browser (`q + enter` will stop the dev server).

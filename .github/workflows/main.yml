@@ -1,0 +1,96 @@
+# Name of your workflow
+name: React and Python CI
+
+# 1. When to run the workflow
+on:
+  # Run on pushes to the 'main' branch
+  push:
+    branches: [main]
+  # Run on pull requests targeting the 'main' branch
+  pull_request:
+    branches: [main]
+
+# 2. What jobs to run
+jobs:
+  build:
+    name: Build React App
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # --- React/Frontend Steps ---
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          # Path to the lock file is now nested
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        # CRITICAL: New working directory path
+        working-directory: ./src/frontend
+
+      - name: Run tests
+        run: npm test
+        working-directory: ./src/frontend
+
+      - name: Build the app
+        run: npm run build
+        working-directory: ./src/frontend
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # The build output is inside the frontend folder
+          path: ./src/frontend/dist
+
+      # --- Python/Backend Steps ---
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          # Path to the requirements file is now nested
+          cache-dependency-path: src/backend/requirements.txt
+
+      - name: (Backend) Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+        # CRITICAL: Set to the folder containing requirements.txt
+        working-directory: ./src/backend
+
+      # - name: (Backend) Run tests
+      #   run: pytest
+      #   # CRITICAL: Set to the folder containing your test files
+      #   working-directory: ./src/backend/model
+
+  # ... rest of the deploy job
+
+  # # The "CD" part: deploy
+  # deploy:
+  #   name: Deploy
+  #   # This job needs 'build-and-test' to finish successfully
+  #   needs: build-and-test
+  #   # Only run this job on a push to the 'main' branch
+  #   # (i.e., don't run on pull requests)
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Check out code
+  #       uses: actions/checkout@v4
+
+  #     # --- Deployment Steps ---
+  #     # This is where you add the steps for YOUR hosting provider
+  #     # Examples: Vercel, Heroku, AWS, DigitalOcean, etc.
+
+  #     - name: Deployment
+  #       run: |
+  #         echo "Deploying to production..."
+  #         aws s3 sync ./frontend/build s3://deployment_test --delete
+  #         echo "Deployment complete!"
