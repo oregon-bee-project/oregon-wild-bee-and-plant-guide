@@ -36,12 +36,12 @@ jobs:
 
       - name: (Frontend) Run tests
         run: npm test
-        working-directory: ./frontend
+        working-directory: src/frontend
 
       - name: (Frontend) Build the app
         # This builds the static files for production
         run: npm run build
-        working-directory: ./frontend
+        working-directory: src/frontend
 
       # --- Python/Backend Steps ---
       - name: Set up Python
@@ -54,34 +54,34 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-        working-directory: ./model
+        working-directory: src/backend
 
       - name: (Backend) Run tests
         # This assumes you use 'pytest'
         run: pytest
-        working-directory: ./model
+        working-directory: src/backend
 
-  # The "CD" part: deploy
-  deploy:
-    name: Deploy
-    # This job needs 'build-and-test' to finish successfully
-    needs: build-and-test
-    # Only run this job on a push to the 'main' branch
-    # (i.e., don't run on pull requests)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  # # The "CD" part: deploy
+  # deploy:
+  #   name: Deploy
+  #   # This job needs 'build-and-test' to finish successfully
+  #   needs: build-and-test
+  #   # Only run this job on a push to the 'main' branch
+  #   # (i.e., don't run on pull requests)
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-    runs-on: ubuntu-latest
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Check out code
+  #       uses: actions/checkout@v4
 
-      # --- Deployment Steps ---
-      # This is where you add the steps for YOUR hosting provider
-      # Examples: Vercel, Heroku, AWS, DigitalOcean, etc.
+  #     # --- Deployment Steps ---
+  #     # This is where you add the steps for YOUR hosting provider
+  #     # Examples: Vercel, Heroku, AWS, DigitalOcean, etc.
 
-      - name: Deployment
-        run: |
-          echo "Deploying to production..."
-          aws s3 sync ./frontend/build s3://deployment_test --delete
-          echo "Deployment complete!"
+  #     - name: Deployment
+  #       run: |
+  #         echo "Deploying to production..."
+  #         aws s3 sync ./frontend/build s3://deployment_test --delete
+  #         echo "Deployment complete!"
