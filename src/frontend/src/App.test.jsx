@@ -43,8 +43,10 @@ describe('App component', () => {
     // check that map page option is selected
     expect(screen.getByRole('radio', { name: /map page/i })).toBeChecked();
 
-    // check that map placeholder message is present
-    expect(screen.getByText(/map goes here/i)).toBeInTheDocument();
+    // check that map is present
+    const mapContainer = document.getElementById('map');
+    expect(mapContainer).toBeInTheDocument();
+  
   });
 
   test('renders the results page', async () => {
