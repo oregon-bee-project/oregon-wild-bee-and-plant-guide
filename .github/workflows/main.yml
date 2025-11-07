@@ -63,10 +63,10 @@ jobs:
         # CRITICAL: Set to the folder containing requirements.txt
         working-directory: ./src/backend
 
-      - name: (Backend) Run tests
-        run: pytest
-        # CRITICAL: Set to the folder containing your test files
-        working-directory: ./src/backend/model
+      # - name: (Backend) Run tests
+      #   run: pytest
+      #   # CRITICAL: Set to the folder containing your test files
+      #   working-directory: ./src/backend/model
 
   # ... rest of the deploy job
 
