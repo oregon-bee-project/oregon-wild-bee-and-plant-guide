@@ -71,26 +71,29 @@ jobs:
   # ... rest of the deploy job
 
   # # The "CD" part: deploy
-  # deploy:
-  #   name: Deploy
-  #   # This job needs 'build-and-test' to finish successfully
-  #   needs: build-and-test
-  #   # Only run this job on a push to the 'main' branch
-  #   # (i.e., don't run on pull requests)
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  # 3. The "CD" part: deploy to GitHub Pages
+  deploy-frontend:
+    name: Deploy Frontend to GitHub Pages
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-  #   runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
-  #   steps:
-  #     - name: Check out code
-  #       uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
-  #     # --- Deployment Steps ---
-  #     # This is where you add the steps for YOUR hosting provider
-  #     # Examples: Vercel, Heroku, AWS, DigitalOcean, etc.
+  # 4. The "CD" part: deploy to Render
+  deploy-backend:
+    name: Deploy Backend to Render
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-  #     - name: Deployment
-  #       run: |
-  #         echo "Deploying to production..."
-  #         aws s3 sync ./frontend/build s3://deployment_test --delete
-  #         echo "Deployment complete!"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
