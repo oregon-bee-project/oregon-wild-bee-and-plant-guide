@@ -5,6 +5,7 @@
 */
 
 import '@testing-library/jest-dom';
+import { vi } from "vitest";
 
 // mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -36,3 +37,20 @@ console.error = (...args) => {
   }
   originalError(...args);
 };
+
+// Mock MapLibre so WebGL never initializes in test environment
+vi.mock("maplibre-gl", () => {
+  return {
+    default: {
+      Map: function () {
+        return {
+          on: () => {},
+          remove: () => {},
+          addControl: () => {},
+          setCenter: () => {},
+          setZoom: () => {},
+        };
+      }
+    }
+  };
+});
