@@ -7,8 +7,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // maps '@/' to 'src' directory
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+    globals: true,
   },
 });
