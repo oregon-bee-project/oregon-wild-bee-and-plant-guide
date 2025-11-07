@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # The build output is inside the frontend folder
-          path: ./src/frontend/build
+          path: ./src/frontend/dist
 
       # --- Python/Backend Steps ---
       - name: Set up Python
