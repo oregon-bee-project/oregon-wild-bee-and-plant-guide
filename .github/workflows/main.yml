@@ -1,78 +1,4 @@
 # Name of your workflow
-name: React and Python CI
-
-# 1. When to run the workflow
-on:
-  # Run on pushes to the 'main' branch
-  push:
-    branches: [main]
-  # Run on pull requests targeting the 'main' branch
-  pull_request:
-    branches: [main]
-
-# 2. What jobs to run
-jobs:
-  build:
-    name: Build React App
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      # --- React/Frontend Steps ---
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          # Path to the lock file is now nested
-          cache-dependency-path: src/frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        # CRITICAL: New working directory path
-        working-directory: ./src/frontend
-
-      - name: Run tests
-        run: npm test
-        working-directory: ./src/frontend
-
-      - name: Build the app
-        run: npm run build
-        working-directory: ./src/frontend
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # The build output is inside the frontend folder
-          path: ./src/frontend/dist
-
-      # --- Python/Backend Steps ---
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: "pip"
-          # Path to the requirements file is now nested
-          cache-dependency-path: src/backend/requirements.txt
-
-      - name: (Backend) Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-        # CRITICAL: Set to the folder containing requirements.txt
-        working-directory: ./src/backend
-
-      # - name: (Backend) Run tests
-      #   run: pytest
-      #   # CRITICAL: Set to the folder containing your test files
-      #   working-directory: ./src/backend/model
-
-  # ... rest of the deploy job
-
-  # # The "CD" part: deploy
-  # 3. The "CD" part: deploy to GitHub Pages
-  # Name of your workflow
 name: React and Python CI & Full-Stack Deploy
 
 # 1. When to run the workflow
@@ -85,11 +11,11 @@ on:
   # Allows you to manually run this workflow from the Actions tab
   workflow_dispatch:
 
-# Grant permissions for the deploy job to write to GitHub Pages
+# Grant permissions for the deploy job
 permissions:
   contents: read
-  pages: write      # Required for GitHub Pages deploy
-  id-token: write   # Required for auth
+  pages: write # Required for GitHub Pages deploy
+  id-token: write # Required for auth
   pull-requests: write # Required for posting the preview URL comment
 
 # 2. What jobs to run
@@ -111,7 +37,7 @@ jobs:
           cache-dependency-path: src/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm install # Using 'install' to bypass lockfile errors
         working-directory: ./src/frontend
 
       - name: Run tests
@@ -125,7 +51,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./src/frontend/dist
+          path: ./src/frontend/dist # Use 'dist' for Vite
 
       # --- Python/Backend Steps ---
       - name: Set up Python
@@ -140,39 +66,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
         working-directory: ./src/backend
-      
+
       # (Skipping Python tests as requested)
+      # - name: (Backend) Run tests (Pytest)
+      #   run: pytest
+      #   working-directory: ./src/backend/model
 
   # 3. The "CD" part: deploy to GitHub Pages
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages
     needs: build
-    
-    # --- MODIFIED THIS LINE ---
-    # Run on a push to main (production) OR on a pull request (preview)
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
-    
-    environment:
-      # This tells GitHub Pages to create a 'production' or 'preview' environment
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-  
-  # 4. The "CD" part: deploy to Render
-  deploy-backend:
-    name: Deploy Backend to Render
-    needs: build
 
-    # --- THIS LINE IS UNCHANGED (ON PURPOSE) ---
-    # Only run on a push to main OR a manual dispatch
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-    
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Render Deploy Hook
-        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+    # Run on a push to main (production) OR on any pull request (preview)
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
+
+    environment:
+      name: github
