@@ -1,39 +1,48 @@
 import Papa from "papaparse";
-import fluid from "infusion";
 import pako from "pako";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import { resolve } from "path";
 
 // filename code
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//register namespace
-var simplex = fluid.registerNamespace("simplex");
-//inflateUint8Array function
-simplex.inflateUint8Array = async function (url) {
-  const filePath = resolve(__dirname, url);
+// Helper: inflate and return CSV text
+async function inflateVizFile(relativePath) {
+  const filePath = path.resolve(__dirname, relativePath);
   const fileBuffer = await fs.readFile(filePath);
   const byteArray = new Uint8Array(fileBuffer);
 
-  const inflated = pako.inflate(byteArray, { to: "string" });
-  return inflated;
-};
+  return pako.inflate(byteArray, { to: "string" });
+}
 
-// parse function
-simplex.parse = async function (url) {
-  const data = await simplex.inflateUint8Array(url);
-  const results = Papa.parse(data, { header: true, skipEmptyLines: true });
-  return results.data;
-};
+// Parse CSV string using PapaParse
+async function parseViz(relativePath) {
+  const csvText = await inflateVizFile(relativePath);
+  const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  return parsed.data;
+}
 
-//Usage
-// Replace with .viz file
+// Write JSON into same directory as source file
+async function writeJson(relativePath, data) {
+  const srcPath = path.resolve(__dirname, relativePath);
+  const jsonPath = srcPath.replace(/\.viz$/i, ".json");
+
+  await fs.writeFile(jsonPath, JSON.stringify(data, null, 2), "utf-8");
+  console.log(`JSON written to: ${jsonPath}`);
+}
+
+// Usage
 const url = "../b-data/plant-pollinators-OBA-2025-assigned-subset-labels.viz";
 
-simplex.parse(url).then((parsed) => {
+(async () => {
+  const parsed = await parseViz(url);
   console.log("Parsed rows:", parsed.length);
-  console.log(parsed.slice(0, 3)); // preview first few rows
-});
+  console.log(parsed.slice(0, 3));
+
+  await writeJson(url, parsed);
+})();
