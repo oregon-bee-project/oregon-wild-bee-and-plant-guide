@@ -29,13 +29,19 @@ const OSUHeader = () => {
         flex="1"
       >
         {/* OSU Logo */}
-        <Image
-          src={OSULogo}
-          alt="Oregon State University Logo"
-          width="250px"
-          ml="52px"
-          mr="19px"
-        />
+        <Link
+          href="https://oregonstate.edu/"
+          _focus={{ outline: 'none' }}
+          _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
+        >
+          <Image
+            src={OSULogo}
+            alt="Oregon State University Logo"
+            width="250px"
+            ml="52px"
+            mr="19px"
+          />
+        </Link>
 
         {/* vertical separator */}
         <Box
@@ -46,18 +52,21 @@ const OSUHeader = () => {
 
         {/* title text */}
         <Box pl="20px">
-          <Stack spacing={0}>
+          <Stack spacing={0} pb="10px">
           <Link
               href="https://agsci.oregonstate.edu/"
               _hover={{ 
                 textDecoration: "underline",
                 textDecorationColor: "white"
               }}
+              _focus={{ outline: 'none' }}
+              _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
             >
               <Text 
                 fontSize="16px"
-                fontFamily="Stratum2Regular"
-                fontWeight="400"
+                fontFamily="Stratum2Light"
+                fontWeight="600"
+                textTransform="uppercase"
                 letterSpacing="1px"
                 color="white"
               >
@@ -72,11 +81,14 @@ const OSUHeader = () => {
                 textDecoration: "underline",
                 textDecorationColor: "white"
               }}
+              _focus={{ outline: 'none' }}
+              _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
             >
               <Text 
                 fontSize="24px"
-                fontFamily="Stratum2Regular"
-                fontWeight="400"
+                fontFamily="Stratum2Light"
+                fontWeight="600"
+                textTransform="uppercase"
                 letterSpacing="1px"
                 lineHeight="0.5"
                 color="white"
