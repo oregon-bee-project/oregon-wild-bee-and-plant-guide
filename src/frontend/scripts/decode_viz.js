@@ -1,7 +1,8 @@
 import Papa from "papaparse";
-import pako from "pako";
+import fluid from "infusion"; //for user interfaces
+import pako from "pako"; //fetches zip and other compresssed files
 import fs from "fs/promises";
-import path from "path";
+import path from "path"; //imports the path module for working with file directories and paths
 import { fileURLToPath } from "url";
 
 // filename code
@@ -17,15 +18,20 @@ async function inflateVizFile(relativePath) {
   return pako.inflate(byteArray, { to: "string" });
 }
 
-// Parse CSV string using PapaParse
-async function parseViz(relativePath) {
-  const csvText = await inflateVizFile(relativePath);
-  const parsed = Papa.parse(csvText, {
-    header: true,
-    skipEmptyLines: true,
-  });
-  return parsed.data;
-}
+/**
+ * Asynchronously fetches, inflates, and parses data from a given URL.
+ * * Assumes the data at the URL is a compressed (e.g., gzipped) CSV file.
+ * It uses Papa.parse to convert the CSV data into an array of objects.
+ *
+ * @param {string} url - The URL of the compressed data file to fetch and parse.
+ * @returns {Promise<Array<object>>} A promise that resolves to an array of objects,
+ * where each object represents a row from the CSV.
+ */
+simplex.parse = async function (url) {
+  const data = await simplex.inflateUint8Array(url);
+  const results = Papa.parse(data, { header: true, skipEmptyLines: true });
+  return results.data;
+};
 
 // Write JSON into same directory as source file
 async function writeJson(relativePath, data) {

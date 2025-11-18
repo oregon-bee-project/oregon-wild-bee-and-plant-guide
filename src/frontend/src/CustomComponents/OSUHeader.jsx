@@ -4,105 +4,100 @@ import {
   Image,
   Text,
   Link,
-  HStack,
-  Spacer,
+  Stack
 } from '@chakra-ui/react';
 import OSULogo from "@/assets/OSU-logo.png"
-import { LuSearch } from "react-icons/lu";
+import '@/index.css'
 
 const OSUHeader = () => {
   return (
-    <Box>
-      {/* top orange bar */}
-      <Box bg="#d73f09" h="12px" />
-
-      {/* main black bar */}
+    <Box
+      as="header"
+      width="100%"
+      minH="144px"
+      maxH="144px"
+      display="flex"
+      flexDirection="column"
+      bg="#000000"
+      borderTop="12px solid #d73f09"
+      borderBottom="1px solid #d73f09"
+      m={0}
+      p={0}
+    >
       <Flex
-        as="header"
         align="center"
-        bg="black"
-        color="white"
-        py={8}
-        px={{ base: 4, md: 8 }}
-        minH="90px"
+        flex="1"
       >
         {/* OSU Logo */}
-        <Image
-          src={OSULogo}
-          alt="Oregon State University Logo"
-          height="55px"
-          mr={6}
-        />
+        <Link
+          href="https://oregonstate.edu/"
+          _focus={{ outline: 'none' }}
+          _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
+        >
+          <Image
+            src={OSULogo}
+            alt="Oregon State University Logo"
+            width="250px"
+            ml="52px"
+            mr="19px"
+          />
+        </Link>
 
         {/* vertical separator */}
         <Box
-          h="70px"
+          h="100%"
           w="1px"
-          bg="gray.400"
-          mr={6}
+          bg="#666666"
         />
 
         {/* title text */}
-        <Box>
-          <Text
-            fontSize="xs"
-            fontWeight="normal"
-            color="white"
-          >
-            COLLEGE OF AGRICULTURAL SCIENCES
-          </Text>
-          <Text
-            fontSize="2xl"
-            fontWeight="bold"
-            letterSpacing="wide"
-            color="white"
-          >
-            OREGON BEE ATLAS
-          </Text>
+        <Box pl="20px">
+          <Stack spacing={0} pb="10px">
+          <Link
+              href="https://agsci.oregonstate.edu/"
+              _hover={{ 
+                textDecoration: "underline",
+                textDecorationColor: "white"
+              }}
+              _focus={{ outline: 'none' }}
+              _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
+            >
+              <Text 
+                fontSize="16px"
+                fontFamily="Stratum2Light"
+                fontWeight="600"
+                textTransform="uppercase"
+                letterSpacing="1px"
+                color="white"
+              >
+                COLLEGE OF AGRICULTURAL SCIENCES{" "}
+                <Text as="span" fontSize="16px" color="#666666">»</Text>
+              </Text>
+            </Link>
+
+            <Link
+              href="https://agsci.oregonstate.edu/bee-atlas"
+              _hover={{ 
+                textDecoration: "underline",
+                textDecorationColor: "white"
+              }}
+              _focus={{ outline: 'none' }}
+              _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
+            >
+              <Text 
+                fontSize="24px"
+                fontFamily="Stratum2Light"
+                fontWeight="600"
+                textTransform="uppercase"
+                letterSpacing="1px"
+                lineHeight="0.5"
+                color="white"
+              >
+                OREGON BEE ATLAS
+              </Text>
+            </Link>
+          </Stack>
         </Box>
-
-        <Spacer /> {/* pushes search/apply/myCAS to the right */}
-
-        {/* right side links */}
-        <HStack spacing={6} alignItems="center">
-          <LuSearch
-            color="#d73f09"
-          />
-
-          <Box
-            h="15px"
-            w="1px"
-            bg="gray.400"
-          />
-
-          {/* apply link */}
-          <Link
-            href="#"
-            color="white"
-            fontSize="md"
-            fontWeight="semibold"
-            _hover={{ textDecoration: 'underline' }}
-          >
-            Apply
-          </Link>
-
-          <Box
-            h="15px"
-            w="1px"
-            bg="gray.400"
-          />
-
-          {/* MyCAS link */}
-          <Link
-            href="#"
-            color="white"
-            fontSize="md"
-            fontWeight="semibold"
-            _hover={{ textDecoration: 'underline' }}
-          >
-            MyCAS
-          </Link>
-        </HStack>
       </Flex>
     </Box>
   );
