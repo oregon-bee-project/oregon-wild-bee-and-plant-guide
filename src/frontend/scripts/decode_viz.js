@@ -4,23 +4,19 @@ import pako from "pako"; //fetches zip and other compresssed files
 import fs from "fs/promises";
 import path from "path"; //imports the path module for working with file directories and paths
 import { fileURLToPath } from "url";
-import { resolve } from "path";
 
 // filename code
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-//register namespace
-var simplex = fluid.registerNamespace("simplex");
-//inflateUint8Array function
-simplex.inflateUint8Array = async function (url) {
-  const filePath = resolve(__dirname, url);
+// Helper: inflate and return CSV text
+async function inflateVizFile(relativePath) {
+  const filePath = path.resolve(__dirname, relativePath);
   const fileBuffer = await fs.readFile(filePath);
   const byteArray = new Uint8Array(fileBuffer);
 
-  const inflated = pako.inflate(byteArray, { to: "string" });
-  return inflated;
-};
+  return pako.inflate(byteArray, { to: "string" });
+}
 
 /**
  * Asynchronously fetches, inflates, and parses data from a given URL.
@@ -37,11 +33,22 @@ simplex.parse = async function (url) {
   return results.data;
 };
 
-//Usage
-// Replace with .viz file
+// Write JSON into same directory as source file
+async function writeJson(relativePath, data) {
+  const srcPath = path.resolve(__dirname, relativePath);
+  const jsonPath = srcPath.replace(/\.viz$/i, ".json");
+
+  await fs.writeFile(jsonPath, JSON.stringify(data, null, 2), "utf-8");
+  console.log(`JSON written to: ${jsonPath}`);
+}
+
+// Usage
 const url = "../b-data/plant-pollinators-OBA-2025-assigned-subset-labels.viz";
 
-simplex.parse(url).then((parsed) => {
+(async () => {
+  const parsed = await parseViz(url);
   console.log("Parsed rows:", parsed.length);
-  console.log(parsed.slice(0, 3)); // preview first few rows
-});
+  console.log(parsed.slice(0, 3));
+
+  await writeJson(url, parsed);
+})();
