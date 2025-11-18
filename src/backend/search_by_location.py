@@ -1,5 +1,6 @@
 import zmq
 import pandas as pd
+import numpy as np
 from geopy.geocoders import Nominatim
 from geopy.exc import (
     GeocoderTimedOut,
@@ -10,7 +11,7 @@ from geopy.exc import (
 )
 
 PORT = 5556
-EXCEL_PATH = "C:/Users/15038/Capstone/bee-plant-data-exploration/src/data/cleaned_OBA_2018-2024_V1_7_10-3-2025.xlsx"
+DATA_PATH = "../data/example_data.json" # change this for GitHub Pages
 
 # Seraches internet to find matching County depending on Lat and Long
 def get_county_from_coordinates(latitude, longitude):
@@ -74,24 +75,23 @@ def set_county(response, coordinates):
 # creates a dataframe using the county name and the excel sheet, then passes it into the response_json
 def create_df(response):
     
-    col_names = ["day", "month", "year", "country", "stateProvince", "county", "locality", "samplingProtocol", 
-                 "phylumPlant", "orderPlant", "familyPlant", "genusPlant", "speciesPlant", "taxonRankPlant", 
-                 "phylum", "class", "order", "family", "genus", "subgenus", "specificEpithet", "taxonomicNotes",
-                 "scientificName", "sex", "caste", "taxonRank"]
-    
     try:
-        full_df = pd.read_excel(EXCEL_PATH, usecols=col_names, sheet_name = "OBA_2018-2024")
+        full_df = pd.read_json(DATA_PATH)
     except:
         response["error"] = True
-        response["err_msg"] = "Excel did not open properly"
+        response["err_msg"] = "read_json() did not open properly"
         return
     
     # filter out rows that do not contain the county name
     df_filtered = full_df[full_df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
+    df_filtered = df_filtered.replace({np.nan: None})
     
     response["response"] = df_filtered.to_dict(orient="records")
     
     return
+
+def summary_stats(response):
+    pass
 
 def main():
     # USE zmq to receive signal

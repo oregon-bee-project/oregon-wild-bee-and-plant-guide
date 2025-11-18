@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import search_by_location as sl
 
 app = FastAPI()
 
@@ -21,3 +22,21 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+@app.get("/location-data/")
+def location_root():
+    response_json = {
+        "response": [],
+        "county": "",
+        "error": False,
+        "err_msg" : ""
+    }
+    
+    sl.set_county(response_json, "44.56, -123.26")
+    
+    if response_json["error"]:
+        return response_json
+    
+    sl.create_df(response_json)
+    
+    return response_json
