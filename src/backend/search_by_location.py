@@ -1,6 +1,8 @@
 import zmq
 import pandas as pd
 import numpy as np
+from collections import Counter
+
 from geopy.geocoders import Nominatim
 from geopy.exc import (
     GeocoderTimedOut,
@@ -91,7 +93,87 @@ def create_df(response):
     return
 
 def summary_stats(response):
-    pass
+    stats = {
+        "numRows" : 0,
+        "numUniqueBees" : 0,
+        "numUniquePlants" : 0,
+        "mostCommonBee" : {
+            "phylum" : "",
+            "class" : "",
+            "order" : "",
+            "family" : "",
+            "genus" : "",
+            "subgenus" : "",
+            "specificEpithet" : "",
+            "count" : 0
+        },
+        "mostCommonPlant": {
+            "phylum" : "",
+            "class" : "",
+            "order" : "",
+            "family" : "",
+            "genus" : "",
+            "species" : "",
+            "count" : 0
+        }
+    }
+    
+    data = response["response"]
+
+    rows = data if isinstance(data, list) else []
+    stats["numRows"] = len(rows)
+    if not rows:
+        return stats
+
+    bee_counts = Counter()
+    plant_counts = Counter()
+    most_bee_row = None
+    most_plant_row = None
+
+    for row in rows:
+        plant_rank = row.get("taxonRankPlant")
+        bee_value = row.get("specificEpithet")
+        plant_value = row.get(f"{plant_rank}Plant") if plant_rank else None
+
+        if bee_value is not None:
+            bee_counts[bee_value] += 1
+            if bee_counts[bee_value] > stats["mostCommonBee"]["count"]:
+                stats["mostCommonBee"]["count"] = bee_counts[bee_value]
+                most_bee_row = row
+
+        if plant_value is not None:
+            plant_counts[plant_value] += 1
+            if plant_counts[plant_value] > stats["mostCommonPlant"]["count"]:
+                stats["mostCommonPlant"]["count"] = plant_counts[plant_value]
+                most_plant_row = row
+
+    stats["numUniqueBees"] = len(bee_counts)
+    stats["numUniquePlants"] = len(plant_counts)
+
+    if most_bee_row:
+        stats["mostCommonBee"].update({
+            "phylum": most_bee_row.get("phylum", ""),
+            "class": most_bee_row.get("class", ""),
+            "order": most_bee_row.get("order", ""),
+            "family": most_bee_row.get("family", ""),
+            "genus": most_bee_row.get("genus", ""),
+            "subgenus": most_bee_row.get("subgenus", ""),
+            "specificEpithet": most_bee_row.get("specificEpithet", ""),
+        })
+
+    if most_plant_row:
+        stats["mostCommonPlant"].update({
+            "phylum": most_plant_row.get("phylumPlant", ""),
+            "class": most_plant_row.get("classPlant", ""),
+            "order": most_plant_row.get("orderPlant", ""),
+            "family": most_plant_row.get("familyPlant", ""),
+            "genus": most_plant_row.get("genusPlant", ""),
+            "species": most_plant_row.get("speciesPlant", ""),
+        })
+
+    response["response"] = stats
+    
+    return
 
 def main():
     # USE zmq to receive signal

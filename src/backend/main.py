@@ -39,4 +39,6 @@ def location_root():
     
     sl.create_df(response_json)
     
+    sl.summary_stats(response_json)
+    
     return response_json
