@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Flex } from "@chakra-ui/react";
+import { Box, Flex, Tabs } from "@chakra-ui/react";
+import { LuChartColumn, LuMap } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
@@ -7,46 +8,53 @@ import DataDisplay from "./DataDisplay";
 // This is the main webpage content - everything below the header
 
 const MainContent = () => {
-  const [selectedPage, setSelectedPage] = useState("Map Page");
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 
-	useEffect(() => {
-    const fetchData = async () => {
-			const params = new URLSearchParams({
-				lat: selectedCoords.lat,
-				long: selectedCoords.lng,
-			});
 
-      try {
-        const res = await fetch(`/api/location-data?${params.toString()}`);
-        if (!res.ok) throw new Error("Error fetching location data:");
-        const json = await res.json();
-				console.log(json);
-				//setData(json);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchData();
+	const fetchLocationData = async () => {
+		const params = new URLSearchParams({
+			lat: selectedCoords.lat,
+			long: selectedCoords.lng,
+		});
 
-	}, [selectedCoords]);
+		try {
+			const res = await fetch(`/api/location-data?${params.toString()}`);
+			if (!res.ok) throw new Error("Error fetching location data:");
+			const json = await res.json();
+			console.log(json);
+			//setData(json);
+		} catch (err) {
+			console.error(err);
+		}
+	}
 
 
   return (
     <>
       <Flex h="100%" p="10px" gap="30px">
-        <PromptSidebar
-          selectedPage={selectedPage}
-          setSelectedPage={setSelectedPage}
-        />
-        {selectedPage == "Map Page" ? (
-            <InteractiveMap
+        <PromptSidebar />
+
+				<Tabs.Root defaultValue="map" flex="1" display="flex" flexDirection="column">
+					<Tabs.List>
+						<Tabs.Trigger value="map">
+							<LuMap /> Map
+						</Tabs.Trigger>
+						<Tabs.Trigger value="datadisplay">
+							<LuChartColumn /> Data Display
+						</Tabs.Trigger>
+					</Tabs.List>
+					<Tabs.Content value="map" flex="1" display="flex">
+						<InteractiveMap
 							selectedCoords={selectedCoords}
 							setSelectedCoords={setSelectedCoords}
-            />
-        ) : (
-            <DataDisplay />
-        )}
+							fetchLocationData={fetchLocationData}
+						/>
+					</Tabs.Content>
+					<Tabs.Content value="datadisplay" flex="1" display="flex">
+						<DataDisplay />
+					</Tabs.Content>
+				</Tabs.Root>
+
       </Flex>
     </>
   );

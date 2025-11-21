@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Flex, Input, InputGroup, Button } from "@chakra-ui/react";
-import { LuMapPin } from "react-icons/lu";
+import { LuLocateFixed } from "react-icons/lu";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const InteractiveMap = ({ selectedCoords, setSelectedCoords }) => {
+const InteractiveMap = ({ 
+  selectedCoords, 
+  setSelectedCoords, 
+  fetchLocationData 
+}) => {
   const mapContainerRef = useRef(null);
 
   useEffect(() => {
@@ -38,12 +42,30 @@ const InteractiveMap = ({ selectedCoords, setSelectedCoords }) => {
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       <Flex gap={2}>
+
+        {/* Lat/Long input fields */}
         <InputGroup startAddon="Latitude">
-          <Input value={selectedCoords.lat} />
+          <Input
+            placeholder="Type or click on the map!"
+            value={selectedCoords.lat}
+            onChange={(e) =>
+              setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
+            }
+          />
         </InputGroup>
         <InputGroup startAddon="Longitude">
-          <Input value={selectedCoords.lng} />
+          <Input
+            placeholder="Type or click on the map!"
+            value={selectedCoords.lng}
+            onChange={(e) =>
+              setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
+            }
+          />
         </InputGroup>
+
+        <Button bg="red" onClick={fetchLocationData}>
+          <LuLocateFixed /> Set Location
+        </Button>
       </Flex>
 
       {/* MAP BOX (replaces your placeholder) */}
