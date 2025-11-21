@@ -42,16 +42,7 @@ def get_county_from_coordinates(latitude, longitude):
     return None
 
 # Updates the response_json with the correct county name
-def set_county(response, coordinates):
-    
-    full_location = coordinates.replace(" ", "")
-    
-    try:
-        lat, long = full_location.split(",")
-    except:
-        response["error"] = True
-        response["err_msg"] = "Does not provide Latitude and Longitude"
-        return
+def set_county(response, lat, long):
     
     try:
         lat, long = float(lat), float(long)
@@ -75,104 +66,124 @@ def set_county(response, coordinates):
     return
 
 # creates a dataframe using the county name and the excel sheet, then passes it into the response_json
-def create_df(response):
-    
-    try:
-        full_df = pd.read_json(DATA_PATH)
-    except:
-        response["error"] = True
-        response["err_msg"] = "read_json() did not open properly"
-        return
+def filter_df(response, df):
     
     # filter out rows that do not contain the county name
-    df_filtered = full_df[full_df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
+    df_filtered = df[df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
     df_filtered = df_filtered.replace({np.nan: None})
     
     response["response"] = df_filtered.to_dict(orient="records")
     
     return
 
-def summary_stats(response):
+def summary_stats(response, inat_key):
     stats = {
-        "numRows" : 0,
-        "numUniqueBees" : 0,
-        "numUniquePlants" : 0,
-        "mostCommonBee" : {
-            "phylum" : "",
-            "class" : "",
-            "order" : "",
-            "family" : "",
-            "genus" : "",
-            "subgenus" : "",
-            "specificEpithet" : "",
-            "count" : 0
+        "numRows": 0,
+        "numUniqueBees": 0,
+        "numUniquePlants": 0,
+        "mostCommonBee": {
+            "phylum": "",
+            "class": "",
+            "order": "",
+            "family": "",
+            "genus": "",
+            "subgenus": "",
+            "specificEpithet": "",
+            "count": 0,
+            "scientificName": ""
         },
         "mostCommonPlant": {
-            "phylum" : "",
-            "class" : "",
-            "order" : "",
-            "family" : "",
-            "genus" : "",
-            "species" : "",
-            "count" : 0
+            "phylum": "",
+            "class": "",
+            "order": "",
+            "family": "",
+            "genus": "",
+            "species": "",
+            "count": 0,
+            "plantINatId": "",
+            "iNatURL": ""
         }
     }
-    
-    data = response["response"]
 
-    rows = data if isinstance(data, list) else []
+    rows = response.get("response") or []
+    if not isinstance(rows, list):
+        rows = []
+
     stats["numRows"] = len(rows)
     if not rows:
-        return stats
+        response["response"] = stats
+        return
+
+    def normalize_string(value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            trimmed = value.strip()
+            return trimmed or None
+        return str(value)
+
+    def split_scientific_name(name):
+        if not name:
+            return "", ""
+        parts = name.split()
+        if not parts:
+            return "", ""
+        genus = parts[0]
+        species = " ".join(parts[1:]) if len(parts) > 1 else ""
+        return genus, species
 
     bee_counts = Counter()
     plant_counts = Counter()
-    most_bee_row = None
-    most_plant_row = None
+    most_common_bee_row = None
+    most_common_bee_name = ""
+    most_common_plant_row = None
+    most_common_plant_value = None
 
     for row in rows:
-        plant_rank = row.get("taxonRankPlant")
-        bee_value = row.get("specificEpithet")
-        plant_value = row.get(f"{plant_rank}Plant") if plant_rank else None
+        # Pollinator counts
+        bee_name = normalize_string(row.get("scientificName")) or normalize_string(row.get("specificEpithetVolDet"))
+        if bee_name:
+            bee_counts[bee_name] += 1
+            if bee_counts[bee_name] > stats["mostCommonBee"]["count"]:
+                stats["mostCommonBee"]["count"] = bee_counts[bee_name]
+                most_common_bee_row = row
+                most_common_bee_name = bee_name
 
-        if bee_value is not None:
-            bee_counts[bee_value] += 1
-            if bee_counts[bee_value] > stats["mostCommonBee"]["count"]:
-                stats["mostCommonBee"]["count"] = bee_counts[bee_value]
-                most_bee_row = row
-
+        # Plant counts - only plantINatId is available in the dataset
+        plant_value = row.get("plantINatId")
         if plant_value is not None:
             plant_counts[plant_value] += 1
             if plant_counts[plant_value] > stats["mostCommonPlant"]["count"]:
                 stats["mostCommonPlant"]["count"] = plant_counts[plant_value]
-                most_plant_row = row
+                most_common_plant_row = row
+                most_common_plant_value = plant_value
 
     stats["numUniqueBees"] = len(bee_counts)
     stats["numUniquePlants"] = len(plant_counts)
 
-    if most_bee_row:
+    if most_common_bee_row:
+        genus, species = split_scientific_name(most_common_bee_name)
         stats["mostCommonBee"].update({
-            "phylum": most_bee_row.get("phylum", ""),
-            "class": most_bee_row.get("class", ""),
-            "order": most_bee_row.get("order", ""),
-            "family": most_bee_row.get("family", ""),
-            "genus": most_bee_row.get("genus", ""),
-            "subgenus": most_bee_row.get("subgenus", ""),
-            "specificEpithet": most_bee_row.get("specificEpithet", ""),
+            "family": normalize_string(most_common_bee_row.get("familyVolDet")) or "",
+            "genus": normalize_string(most_common_bee_row.get("genusVolDet")) or genus,
+            "subgenus": normalize_string(most_common_bee_row.get("subgenus")) or "",
+            "specificEpithet": normalize_string(most_common_bee_row.get("specificEpithetVolDet")) or species,
+            "scientificName": most_common_bee_name
         })
 
-    if most_plant_row:
+    if most_common_plant_row is not None:
+        plant_identifier = normalize_string(most_common_plant_value)
+        row_mask = inat_key["id"] == int(plant_identifier)
+        species_common_name = inat_key.loc[row_mask, "commonName"].iloc[0] if row_mask.any() else ""
+        plant_image_url = inat_key.loc[row_mask, "iNaturalistTaxonImage"].iloc[0] if row_mask.any() else ""
         stats["mostCommonPlant"].update({
-            "phylum": most_plant_row.get("phylumPlant", ""),
-            "class": most_plant_row.get("classPlant", ""),
-            "order": most_plant_row.get("orderPlant", ""),
-            "family": most_plant_row.get("familyPlant", ""),
-            "genus": most_plant_row.get("genusPlant", ""),
-            "species": most_plant_row.get("speciesPlant", ""),
+            "species": species_common_name or "",
+            "plantINatId": plant_identifier or "",
+            "iNatURL": plant_image_url or ""
         })
 
     response["response"] = stats
-    
+
     return
 
 def main():
