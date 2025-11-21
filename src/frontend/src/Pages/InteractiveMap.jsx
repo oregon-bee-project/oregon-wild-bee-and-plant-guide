@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Flex, Text, Button } from "@chakra-ui/react";
+import { Box, Flex, Input, InputGroup, Button } from "@chakra-ui/react";
 import { LuMapPin } from "react-icons/lu";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const InteractiveMap = () => {
+const InteractiveMap = ({ selectedCoords, setSelectedCoords }) => {
   const mapContainerRef = useRef(null);
-  const [selectedLocation, setSelectedLocation] = useState(null);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -23,7 +22,8 @@ const InteractiveMap = () => {
 
     map.on("click", (event) => {
       const { lng, lat } = event.lngLat;
-      setSelectedLocation({ lng, lat });
+      // note: we are choosing to reverse the order here (aligns with backend/other convention)
+      setSelectedCoords({ lat, lng });
 
       // Remove previous marker
       if (marker) marker.remove();
@@ -37,6 +37,14 @@ const InteractiveMap = () => {
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
+      <Flex gap={2}>
+        <InputGroup startAddon="Latitude">
+          <Input value={selectedCoords.lat} />
+        </InputGroup>
+        <InputGroup startAddon="Longitude">
+          <Input value={selectedCoords.lng} />
+        </InputGroup>
+      </Flex>
 
       {/* MAP BOX (replaces your placeholder) */}
       <Box
@@ -53,20 +61,6 @@ const InteractiveMap = () => {
           style={{ width: "100%", height: "100%" }}
         />
       </Box>
-
-      {/* button */}
-      <Button bg="green.400">
-        <LuMapPin /> Set Location
-      </Button>
-
-      {/* Coordinates display WILL NOT WANT TO ACTUALLY DO THIS FOR THE FINAL PRODUCT 
-      {selectedLocation && (
-        <Text fontSize="sm" mt={2}>
-          Selected Coordinates:<br />
-          Lat: {selectedLocation.lat.toFixed(5)}, Lng:{" "}
-          {selectedLocation.lng.toFixed(5)}
-        </Text>
-      )} */}
     </Flex>
   );
 };

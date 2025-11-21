@@ -24,7 +24,7 @@ app.add_middleware(
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/location-data/")
+@app.get("/api/location-data/")
 def location_root(lat: float, long: float):
     response_json = {
         "response": [],
