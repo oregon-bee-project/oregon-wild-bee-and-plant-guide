@@ -9,6 +9,7 @@ import DataDisplay from "./DataDisplay";
 
 const MainContent = () => {
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
+	const [locationData, setLocationData] = useState(null);
 
 
 	const fetchLocationData = async () => {
@@ -22,7 +23,7 @@ const MainContent = () => {
 			if (!res.ok) throw new Error("Error fetching location data:");
 			const json = await res.json();
 			console.log(json);
-			//setData(json);
+			setLocationData(json);
 		} catch (err) {
 			console.error(err);
 		}
@@ -51,7 +52,9 @@ const MainContent = () => {
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="datadisplay" flex="1" display="flex">
-						<DataDisplay />
+						<DataDisplay
+							locationData={locationData}
+						/>
 					</Tabs.Content>
 				</Tabs.Root>
 

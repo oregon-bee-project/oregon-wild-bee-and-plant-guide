@@ -63,7 +63,11 @@ const InteractiveMap = ({
           />
         </InputGroup>
 
-        <Button bg="red" onClick={fetchLocationData}>
+        <Button
+          bg="red.600"
+          _hover={{bg: "red.500"}}
+          onClick={fetchLocationData}
+        >
           <LuLocateFixed /> Set Location
         </Button>
       </Flex>
