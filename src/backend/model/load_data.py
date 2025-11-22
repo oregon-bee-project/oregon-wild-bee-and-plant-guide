@@ -48,6 +48,9 @@ def preprocess_label(df: pd.DataFrame) -> pd.DataFrame:
     # compute grid cell indices
     df["grid_row"] = ((df["decimalLatitude"] - min_lat) / lat_cell_deg).astype(int)
     df["grid_col"] = ((df["decimalLongitude"] - min_lon) / lon_cell_deg).astype(int)
+
+    num_cols = df["grid_col"].max() + 1
+    df["grid_cell_flattened"] = df["grid_row"] * num_cols + df["grid_col"]
     
     return df
 
@@ -55,7 +58,6 @@ def preprocess_label(df: pd.DataFrame) -> pd.DataFrame:
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
     df_cleaned_observations = preprocess_label(df_observations)
-    print(df_cleaned_observations.head())
 
 
 if __name__ == "__main__":
