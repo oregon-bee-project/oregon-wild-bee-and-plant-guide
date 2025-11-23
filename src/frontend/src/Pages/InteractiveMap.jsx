@@ -10,7 +10,21 @@ const InteractiveMap = ({
   fetchLocationData 
 }) => {
   const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markerRef = useRef(null); 
 
+  // helper function to place marker on click or type
+  const placeMarker = (lng, lat) => {
+    if (!mapRef.current) return;
+  
+    if (!markerRef.current) {
+      markerRef.current = new maplibregl.Marker();
+    }
+  
+    markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
+  };
+
+  // initialize map + handle click to place marker
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -21,23 +35,30 @@ const InteractiveMap = ({
       zoom: 6,
     });
 
-    // WILL NEED TO REDO THIS PART
-    let marker = null;
+    mapRef.current = map;
 
     map.on("click", (event) => {
       const { lng, lat } = event.lngLat;
       // note: we are choosing to reverse the order here (aligns with backend/other convention)
       setSelectedCoords({ lat, lng });
 
-      // Remove previous marker
-      if (marker) marker.remove();
-
-      // Add new marker
-      marker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
+      placeMarker(lng, lat);
     });
 
     return () => map.remove();
   }, []);
+
+  // side effect to handle user typing in coordinates
+  useEffect(() => {
+    const { lat, lng } = selectedCoords;
+  
+    if (!lat || !lng) return;
+    const latNum = Number(lat);
+    const lngNum = Number(lng);
+    if (isNaN(latNum) || isNaN(lngNum)) return;
+  
+    placeMarker(lngNum, latNum);
+  }, [selectedCoords]);
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
