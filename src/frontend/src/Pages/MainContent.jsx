@@ -19,7 +19,7 @@ const MainContent = () => {
 		});
 
 		try {
-			const res = await fetch(`/api/location-data?${params.toString()}`);
+			const res = await fetch(`/api/location-data/?${params.toString()}`);
 			if (!res.ok) throw new Error("Error fetching location data:");
 			const json = await res.json();
 			console.log(json);
@@ -44,14 +44,14 @@ const MainContent = () => {
 							<LuChartColumn /> Data Display
 						</Tabs.Trigger>
 					</Tabs.List>
-					<Tabs.Content value="map" flex="1" display="flex">
+					<Tabs.Content value="map" flex="1" display="flex" minH="0px">
 						<InteractiveMap
 							selectedCoords={selectedCoords}
 							setSelectedCoords={setSelectedCoords}
 							fetchLocationData={fetchLocationData}
 						/>
 					</Tabs.Content>
-					<Tabs.Content value="datadisplay" flex="1" display="flex">
+					<Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
 						<DataDisplay
 							locationData={locationData}
 						/>

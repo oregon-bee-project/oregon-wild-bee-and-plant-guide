@@ -8,7 +8,7 @@ const App = () => {
     <>
       <Flex direction="column" h="100vh">
         <OSUHeader />
-        <Box flex="1">
+        <Box flex="1" minH="0px">
           <MainContent />
         </Box>
       </Flex>
