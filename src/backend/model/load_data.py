@@ -29,7 +29,7 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     return df_observations, df_iNat_lookup
 
 
-def preprocess_label(df: pd.DataFrame) -> pd.DataFrame:
+def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
     columns_to_keep = ["decimalLatitude", "decimalLongitude", "plantINatId", "pollinatorINatId"]
     df = df[columns_to_keep].copy()
     # approximate degrees per meter at Oregon latitude
@@ -57,7 +57,7 @@ def preprocess_label(df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
-    df_cleaned_observations = preprocess_label(df_observations)
+    df_cleaned_observations = preprocess_observations(df_observations)
 
 
 if __name__ == "__main__":
