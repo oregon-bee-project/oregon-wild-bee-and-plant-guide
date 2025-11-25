@@ -1,27 +1,32 @@
 import { Box, Flex, Text, Button } from "@chakra-ui/react";
-import { LuArrowLeftRight, LuFileUp } from "react-icons/lu";
+import { LuFileUp } from "react-icons/lu";
 
-const DataDisplay = () => {
+const DataDisplay = ({ locationData }) => {
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
 
-      {/* map area */}
+      {/* data display area */}
       <Box
         flex="1"
         borderWidth="2px"
         borderRadius="md"
         bg="gray.100"
-        display="flex"
         alignItems="center"
         justifyContent="center"
+        p={2}
+        overflowY="auto"
       >
-        <Text>Data/Results Displayed Here</Text>
+        {locationData ? (
+          <pre>{JSON.stringify(locationData, null, 2)}</pre>
+        ) : (
+          <Text>
+            No location data found. Pick a valid location in Oregon and click "Set Location".
+          </Text>
+        )}
+
       </Box>
       <Flex gap="8px">
-        <Button flex="1" bg="green.400">
-          <LuArrowLeftRight /> Change Location
-        </Button>
-        <Button flex="1" bg="blue.400">
+        <Button flex="1" bg="blue.600" _hover={{bg: "blue.500"}}>
           <LuFileUp /> Export Results
         </Button>
       </Flex>

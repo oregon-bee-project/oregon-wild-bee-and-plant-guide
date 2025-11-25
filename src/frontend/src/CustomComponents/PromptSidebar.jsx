@@ -18,13 +18,6 @@ const PromptSidebar = ({ selectedPage, setSelectedPage }) => {
         <Input placeholder="Enter your prompt here" />
         <Button>Submit</Button>
       </VStack>
-
-      <Box display="flex" justifyContent="center">
-        <SegmentGroup.Root value={selectedPage} onValueChange={(e) => setSelectedPage(e.value)} width="fit-content">
-          <SegmentGroup.Indicator />
-          <SegmentGroup.Items items={["Map Page", "Results Page"]} />
-        </SegmentGroup.Root>
-      </Box>
     </Box>
   );
 };

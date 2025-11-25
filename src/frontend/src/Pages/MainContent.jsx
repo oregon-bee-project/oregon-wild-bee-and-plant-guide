@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Flex } from "@chakra-ui/react";
+import { Flex, Tabs } from "@chakra-ui/react";
+import { LuChartColumn, LuMap } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
@@ -7,16 +8,58 @@ import DataDisplay from "./DataDisplay";
 // This is the main webpage content - everything below the header
 
 const MainContent = () => {
-  const [selectedPage, setSelectedPage] = useState("Map Page");
+  const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
+	const [locationData, setLocationData] = useState(null);
+
+	const API_BASE = import.meta.env.PROD
+		? "https://bee-data-api.onrender.com"		// this is what the url prefix will be in production
+		: "";																		// this is what the url prefix will be in dev
+
+	const fetchLocationData = async () => {
+		const params = new URLSearchParams({
+			lat: selectedCoords.lat,
+			long: selectedCoords.lng,
+		});
+
+		try {
+			const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
+			if (!res.ok) throw new Error("Error fetching location data:");
+			const json = await res.json();
+			setLocationData(json);
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
 
   return (
     <>
       <Flex h="100%" p="10px" gap="30px">
-        <PromptSidebar
-          selectedPage={selectedPage}
-          setSelectedPage={setSelectedPage}
-        />
-        {selectedPage == "Map Page" ? <InteractiveMap /> : <DataDisplay />}
+        <PromptSidebar />
+
+				<Tabs.Root defaultValue="map" flex="1" display="flex" flexDirection="column">
+					<Tabs.List>
+						<Tabs.Trigger value="map">
+							<LuMap /> Map
+						</Tabs.Trigger>
+						<Tabs.Trigger value="datadisplay">
+							<LuChartColumn /> Data Display
+						</Tabs.Trigger>
+					</Tabs.List>
+					<Tabs.Content value="map" flex="1" display="flex" minH="0px">
+						<InteractiveMap
+							selectedCoords={selectedCoords}
+							setSelectedCoords={setSelectedCoords}
+							fetchLocationData={fetchLocationData}
+						/>
+					</Tabs.Content>
+					<Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
+						<DataDisplay
+							locationData={locationData}
+						/>
+					</Tabs.Content>
+				</Tabs.Root>
+
       </Flex>
     </>
   );
