@@ -41,7 +41,7 @@ def location_root(lat: float, long: float):
     
     if response_json["error"]:
         return response_json
-
+    
     sl.filter_df(response_json, full_df)
     
     sl.summary_stats(response_json, inat_key)

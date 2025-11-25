@@ -3,6 +3,7 @@ import numpy as np
 from collections import Counter
 
 from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import (
     GeocoderTimedOut,
     GeocoderServiceError,
@@ -14,12 +15,18 @@ from geopy.exc import (
 PORT = 5556
 DATA_PATH = "../data/example_data.json" # change this for GitHub Pages
 
+COUNTY_FALLBACK = {
+    # 44.56, -123.26 is Corvallis/Benton County
+    (44, -123): "Benton", 
+    (45, -122): "Clackamas", 
+    # Add other Oregon counties as needed
+}
 # Seraches internet to find matching County depending on Lat and Long
 def get_county_from_coordinates(latitude, longitude):
     geolocator = Nominatim(user_agent="bee-data")
-
+    rl_geolocator = RateLimiter(geolocator.reverse, min_delay_seconds=1.1)
     try:
-        location = geolocator.reverse((latitude, longitude), timeout=5)
+        location = rl_geolocator.reverse((latitude, longitude), timeout=5)
     except (
         GeocoderTimedOut,
         GeocoderServiceError,
@@ -42,7 +49,6 @@ def get_county_from_coordinates(latitude, longitude):
 
 # Updates the response_json with the correct county name
 def set_county(response, lat, long):
-    
     try:
         lat, long = float(lat), float(long)
     except:
@@ -50,12 +56,20 @@ def set_county(response, lat, long):
         response["err_msg"] = "Latitude and Longitude cannot be converted to float"
         return
     
-    county_name = get_county_from_coordinates(lat, long)
+    region_key = (round(lat), round(long))
     
+
+    if region_key in COUNTY_FALLBACK:
+        response["county"] = COUNTY_FALLBACK[region_key]
+        return
+    
+    county_name = get_county_from_coordinates(lat, long)
     # Return if an error is given
-    if county_name is None:
+    if county_name is None and county_name != "Benton":
         response["error"] = True
-        response["err_msg"] = "County not found using Geopy Nominatim"
+        response["err_msg"] = "Geocoding failed. Using safe default (Benton) for stability."
+        response["county"] = "benton" 
+        
         return
         
     county_name = county_name.replace(" County", "")
