@@ -7,9 +7,11 @@ files. Then cleans the data into a modeling ready state.
 
 import sys
 import os
+import numpy as np
 import pandas as pd
 from typing import Tuple
 
+# Allow imports from parent directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(parent_dir)
@@ -23,6 +25,7 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     file_path_labels = "data/b-team/plant-pollinators-OBA-2025-assigned-subset-labels.viz"
     file_path_taxa = "data/b-team/plant-pollinators-OBA-2025-assigned-taxa.viz"
+
     df_observations = parse_viz_to_dataframe(file_path_labels)
     df_iNat_lookup = parse_viz_to_dataframe(file_path_taxa)
     
@@ -36,11 +39,12 @@ def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
     """
     columns_to_keep = ["decimalLatitude", "decimalLongitude", "plantINatId", "pollinatorINatId"]
     df = df[columns_to_keep].copy()
+
     # approximate degrees per meter at Oregon latitude
     meters_per_deg_lat = 111132  # nearly constant
     meters_per_deg_lon = 78000   # approx at ~44° north
 
-    cell_meters = 6000 # same as mellitoflora webpage
+    cell_meters = 6000 # same as Mellitoflora webpage
 
     lat_cell_deg = cell_meters / meters_per_deg_lat   # ≈ 0.054°
     lon_cell_deg = cell_meters / meters_per_deg_lon   # ≈ 0.077°
@@ -73,17 +77,32 @@ def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
 
     region_summary = plant_counts.join(pollinator_counts, how='outer').fillna(0).astype(int)
 
-    # get total plant and pollinator counts for each region
-    
-    
+    # get total pollinator count for each region
+    pollinator_cols = [c for c in region_summary.columns if c.split("_")[0] == "pollinator"]
+    region_summary["pollinator_count"] = region_summary[pollinator_cols].sum(axis=1)
+
+    # compute shannon diversity index for pollinators in a region
+    p = region_summary[pollinator_cols].div(region_summary["pollinator_count"], axis=0) # every region has at least 1 pollinator so no divide by 0
+    p = p.replace(0, np.nan)
+    region_summary["bee_shannon_diversity_index"] = - (p * np.log(p)).sum(axis=1)
+
     return region_summary
+
+
+def get_clean_observation_dataframe() -> pd.DataFrame:
+    """
+    Load and preprocess observations into a modeling-ready dataframe.
+    This function is for importing into model.py.
+    """
+    df_observations, _ = load_data()
+    df_clean = preprocess_observations(df_observations)
+    return df_clean
 
 
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
     df_cleaned_observations = preprocess_observations(df_observations)
-    print(df_cleaned_observations.head())
-
+    print(df_cleaned_observations)
 
 
 if __name__ == "__main__":
