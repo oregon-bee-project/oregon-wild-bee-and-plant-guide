@@ -82,26 +82,15 @@ def summary_stats(response, inat_key):
         "numUniqueBees": 0,
         "numUniquePlants": 0,
         "mostCommonBee": {
-            "phylum": "",
-            "class": "",
-            "order": "",
-            "family": "",
-            "genus": "",
-            "subgenus": "",
-            "specificEpithet": "",
-            "count": 0,
-            "scientificName": ""
+            "scientificName": "",
+            "count": 0
         },
         "mostCommonPlant": {
-            "phylum": "",
-            "class": "",
-            "order": "",
-            "family": "",
-            "genus": "",
-            "species": "",
-            "count": 0,
-            "plantINatId": "",
-            "iNatURL": ""
+            "iNatId": "",
+            "iNatTaxonName": "",
+            "commonName": "",
+            "iNatURL": "",
+            "count": 0
         }
     }
 
@@ -116,6 +105,8 @@ def summary_stats(response, inat_key):
 
     def normalize_string(value):
         if value is None:
+            return None
+        if isinstance(value, float) and pd.isna(value):  # <- add NaN guard
             return None
         if isinstance(value, str):
             trimmed = value.strip()
@@ -134,10 +125,9 @@ def summary_stats(response, inat_key):
 
     bee_counts = Counter()
     plant_counts = Counter()
-    most_common_bee_row = None
     most_common_bee_name = ""
-    most_common_plant_row = None
-    most_common_plant_value = None
+    # Keep a reference row for each plant id so we can pull taxonomic fields later
+    plant_rows_map = {}
 
     for row in rows:
         # Pollinator counts
@@ -146,41 +136,55 @@ def summary_stats(response, inat_key):
             bee_counts[bee_name] += 1
             if bee_counts[bee_name] > stats["mostCommonBee"]["count"]:
                 stats["mostCommonBee"]["count"] = bee_counts[bee_name]
-                most_common_bee_row = row
                 most_common_bee_name = bee_name
 
         # Plant counts - only plantINatId is available in the dataset
-        plant_value = row.get("plantINatId")
-        if plant_value is not None:
+        plant_value = normalize_string(row.get("plantINatId"))
+        if plant_value:
             plant_counts[plant_value] += 1
-            if plant_counts[plant_value] > stats["mostCommonPlant"]["count"]:
-                stats["mostCommonPlant"]["count"] = plant_counts[plant_value]
-                most_common_plant_row = row
-                most_common_plant_value = plant_value
+            if plant_value not in plant_rows_map:
+                plant_rows_map[plant_value] = row
 
     stats["numUniqueBees"] = len(bee_counts)
     stats["numUniquePlants"] = len(plant_counts)
 
-    if most_common_bee_row:
-        genus, species = split_scientific_name(most_common_bee_name)
-        stats["mostCommonBee"].update({
-            "family": normalize_string(most_common_bee_row.get("familyVolDet")) or "",
-            "genus": normalize_string(most_common_bee_row.get("genusVolDet")) or genus,
-            "subgenus": normalize_string(most_common_bee_row.get("subgenus")) or "",
-            "specificEpithet": normalize_string(most_common_bee_row.get("specificEpithetVolDet")) or species,
-            "scientificName": most_common_bee_name
-        })
+    if most_common_bee_name:
+        stats["mostCommonBee"]["count"] = bee_counts[most_common_bee_name]
+        stats["mostCommonBee"]["scientificName"] = most_common_bee_name
 
-    if most_common_plant_row is not None:
-        plant_identifier = normalize_string(most_common_plant_value)
-        row_mask = inat_key["id"] == int(plant_identifier)
-        species_common_name = inat_key.loc[row_mask, "commonName"].iloc[0] if row_mask.any() else ""
-        plant_image_url = inat_key.loc[row_mask, "iNaturalistTaxonImage"].iloc[0] if row_mask.any() else ""
-        stats["mostCommonPlant"].update({
-            "species": species_common_name or "",
-            "plantINatId": plant_identifier or "",
-            "iNatURL": plant_image_url or ""
-        })
+    if plant_counts:
+        for plant_id, count in plant_counts.most_common():
+            plant_identifier = normalize_string(plant_id)
+            common_name = ""
+            taxon_name = ""
+            plant_image_url = ""
+
+            row_mask = None
+            if plant_identifier:
+                try:
+                    row_mask = inat_key["id"] == int(float(plant_identifier))
+                except (ValueError, TypeError):
+                    row_mask = None
+
+            if row_mask is not None and row_mask.any():
+                if "commonName" in inat_key.columns:
+                    common_name = normalize_string(inat_key.loc[row_mask, "commonName"].iloc[0]) or ""
+                if not taxon_name and "scientificName" in inat_key.columns:
+                    taxon_name = normalize_string(inat_key.loc[row_mask, "scientificName"].iloc[0]) or ""
+                if not taxon_name and "name" in inat_key.columns:
+                    taxon_name = normalize_string(inat_key.loc[row_mask, "name"].iloc[0]) or ""
+                if "iNaturalistTaxonImage" in inat_key.columns:
+                    plant_image_url = normalize_string(inat_key.loc[row_mask, "iNaturalistTaxonImage"].iloc[0]) or ""
+
+            if not common_name:
+                continue  # skip plants without a name
+
+            stats["mostCommonPlant"]["count"] = count
+            stats["mostCommonPlant"]["commonName"] = common_name
+            stats["mostCommonPlant"]["iNatTaxonName"] = taxon_name
+            stats["mostCommonPlant"]["iNatId"] = plant_identifier or ""
+            stats["mostCommonPlant"]["iNatURL"] = plant_image_url
+            break
 
     response["response"] = stats
 
