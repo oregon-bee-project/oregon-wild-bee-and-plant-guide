@@ -30,6 +30,10 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Take observation dataframe and return a new dataframe
+    with observations grouped by region
+    """
     columns_to_keep = ["decimalLatitude", "decimalLongitude", "plantINatId", "pollinatorINatId"]
     df = df[columns_to_keep].copy()
     # approximate degrees per meter at Oregon latitude
@@ -51,13 +55,35 @@ def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
 
     num_cols = df["grid_col"].max() + 1
     df["grid_cell_flattened"] = df["grid_row"] * num_cols + df["grid_col"]
+
+    # group plant and pollinator counts by region
+    plant_counts = (
+        df.groupby('grid_cell_flattened')['plantINatId']
+        .value_counts()
+        .unstack(fill_value=0)
+        .add_prefix("plant_")
+    )
+
+    pollinator_counts = (
+        df.groupby('grid_cell_flattened')['pollinatorINatId']
+        .value_counts()
+        .unstack(fill_value=0)
+        .add_prefix("pollinator_")
+    )
+
+    region_summary = plant_counts.join(pollinator_counts, how='outer').fillna(0).astype(int)
+
+    # get total plant and pollinator counts for each region
     
-    return df
+    
+    return region_summary
 
 
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
     df_cleaned_observations = preprocess_observations(df_observations)
+    print(df_cleaned_observations.head())
+
 
 
 if __name__ == "__main__":
