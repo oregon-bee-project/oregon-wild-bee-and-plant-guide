@@ -20,6 +20,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+full_df = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-subset-labels.viz")
+inat_key = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-taxa.viz")
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -37,10 +41,7 @@ def location_root(lat: float, long: float):
     
     if response_json["error"]:
         return response_json
-    
-    full_df = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-subset-labels.viz")
-    inat_key = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-taxa.viz")
-    
+
     sl.filter_df(response_json, full_df)
     
     sl.summary_stats(response_json, inat_key)
