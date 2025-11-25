@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Box, Flex, Tabs } from "@chakra-ui/react";
+import { useState } from "react";
+import { Flex, Tabs } from "@chakra-ui/react";
 import { LuChartColumn, LuMap } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
@@ -11,6 +11,9 @@ const MainContent = () => {
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 	const [locationData, setLocationData] = useState(null);
 
+	const API_BASE = import.meta.env.PROD
+		? "https://bee-data-api.onrender.com"		// this is what the url prefix will be in production
+		: "";																		// this is what the url prefix will be in dev
 
 	const fetchLocationData = async () => {
 		const params = new URLSearchParams({
@@ -19,10 +22,9 @@ const MainContent = () => {
 		});
 
 		try {
-			const res = await fetch(`/api/location-data/?${params.toString()}`);
+			const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
 			if (!res.ok) throw new Error("Error fetching location data:");
 			const json = await res.json();
-			console.log(json);
 			setLocationData(json);
 		} catch (err) {
 			console.error(err);
