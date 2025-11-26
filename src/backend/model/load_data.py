@@ -1,5 +1,6 @@
 """
 File for loading and preprocessing data for the model.
+Run this file from src.
 
 Calls parse_viz.py to get a dataframe from the viz 
 files. Then cleans the data into a modeling ready state.
@@ -102,6 +103,7 @@ def get_clean_observation_dataframe() -> pd.DataFrame:
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
     df_cleaned_observations = preprocess_observations(df_observations)
+    df_cleaned_observations.to_csv("backend/model/cleaned_observations_by_region.csv", index=False)
     print(df_cleaned_observations)
 
 
