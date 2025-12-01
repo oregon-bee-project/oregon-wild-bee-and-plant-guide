@@ -6,8 +6,8 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 const InteractiveMap = ({ 
   selectedCoords, 
-  setSelectedCoords, 
-  fetchLocationData 
+  setSelectedCoords,
+  setErrorDialogMsg
 }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -16,12 +16,15 @@ const InteractiveMap = ({
   // helper function to place marker on click or type
   const placeMarker = (lng, lat) => {
     if (!mapRef.current) return;
-  
-    if (!markerRef.current) {
-      markerRef.current = new maplibregl.Marker();
+
+    try {
+        if (!markerRef.current) {
+            markerRef.current = new maplibregl.Marker();
+        }
+        markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
+    } catch (err) {
+        setErrorDialogMsg(err.message);
     }
-  
-    markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
   };
 
   // initialize map + handle click to place marker
@@ -63,11 +66,11 @@ const InteractiveMap = ({
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       <Flex gap={2}>
-
         {/* Lat/Long input fields */}
         <InputGroup startAddon="Latitude">
           <Input
             placeholder="Type or click on the map!"
+            type="number"
             value={selectedCoords.lat}
             onChange={(e) =>
               setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
@@ -77,20 +80,13 @@ const InteractiveMap = ({
         <InputGroup startAddon="Longitude">
           <Input
             placeholder="Type or click on the map!"
+            type="number"
             value={selectedCoords.lng}
             onChange={(e) =>
               setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
             }
           />
         </InputGroup>
-
-        <Button
-          bg="red.600"
-          _hover={{bg: "red.500"}}
-          onClick={fetchLocationData}
-        >
-          <LuLocateFixed /> Set Location
-        </Button>
       </Flex>
 
       {/* MAP BOX (replaces your placeholder) */}
