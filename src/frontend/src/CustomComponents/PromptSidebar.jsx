@@ -16,8 +16,13 @@ const prompts = [
   },
 ];
 
-const PromptSidebar = ({ selectedPage, setSelectedPage, fetchLocationData }) => {
-  const [activePrompt, setActivePrompt] = useState(null);
+const PromptSidebar = ({
+    selectedPage,
+    setSelectedPage,
+    activePrompt,
+    setActivePrompt,
+    fetchLocationData
+}) => {
   return (
     <Box
       w="300px"

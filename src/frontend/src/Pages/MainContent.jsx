@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { act, useState } from "react";
 import { Flex, Tabs } from "@chakra-ui/react";
 import { LuChartColumn, LuMap } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
@@ -11,6 +11,7 @@ import ErrorDialog from "../CustomComponents/ErrorDialog";
 const MainContent = () => {
     const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 	const [locationData, setLocationData] = useState(null);
+    const [activePrompt, setActivePrompt] = useState(null);
     const [errorDialogMsg, setErrorDialogMsg] = useState("");
 
 	const API_BASE = import.meta.env.PROD
@@ -19,9 +20,14 @@ const MainContent = () => {
 
 	const fetchLocationData = async () => {
 
+        if (!activePrompt) {
+            setErrorDialogMsg("Please choose a prompt.")
+            return;
+        }
+
         // check that coordinate fields are populated
         if (selectedCoords.lat == "" || selectedCoords.lng == "") {
-            setErrorDialogMsg("Please set a value for Latitude and Longitude");
+            setErrorDialogMsg("Please set a value for both Latitude and Longitude.");
             return;
         }
 
@@ -52,6 +58,8 @@ const MainContent = () => {
 
         <Flex h="100%" p="10px" gap="30px">
             <PromptSidebar
+                activePrompt={activePrompt}
+                setActivePrompt={setActivePrompt}
                 fetchLocationData={fetchLocationData}
             />
 
