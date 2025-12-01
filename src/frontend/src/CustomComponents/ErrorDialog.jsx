@@ -3,13 +3,17 @@ import { LuTriangleAlert } from "react-icons/lu";
 
 const ErrorDialog = ({ message, onClose }) => {
     return (
-        <Dialog.Root open={true} onOpenChange={(e) => !e.open && onClose()}>
+        <Dialog.Root
+            open={true}
+            onOpenChange={(e) => !e.open && onClose()}
+            placement="center"
+        >
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
                     <Dialog.Content>
                         <Dialog.Header>
-                            <Dialog.Title display="flex" alignItems="center" gap="8px">
+                            <Dialog.Title display="flex" alignItems="center" gap="8px" color="red">
                                 <LuTriangleAlert size={28} color="red"/> Error
                             </Dialog.Title>
                         </Dialog.Header>

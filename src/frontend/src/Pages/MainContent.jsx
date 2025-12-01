@@ -1,4 +1,4 @@
-import { act, useState } from "react";
+import { useState } from "react";
 import { Flex, Tabs } from "@chakra-ui/react";
 import { LuChartColumn, LuMap } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
@@ -37,12 +37,21 @@ const MainContent = () => {
 		});
 
 		try {
-			const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
-			if (!res.ok) throw new Error("Error fetching location data:");
-			const json = await res.json();
-			setLocationData(json);
+            const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
+
+            if (!res.ok) {
+                const errorJson = await res.json();
+                throw new Error(errorJson.detail);
+            }
+        
+            const json = await res.json();
+            setLocationData(json);
 		} catch (err) {
-			console.error(err);
+			console.error(err.message);
+            if (err.message == "County not found using Geopy Nominatim") {
+                setErrorDialogMsg(`Unable to fetch data for the selected
+                    coordinates. Please pick a different location on the map.`);
+            }
 		}
 	}
 
@@ -63,28 +72,28 @@ const MainContent = () => {
                 fetchLocationData={fetchLocationData}
             />
 
-                    <Tabs.Root defaultValue="map" flex="1" display="flex" flexDirection="column">
-                        <Tabs.List>
-                            <Tabs.Trigger value="map">
-                                <LuMap /> Map
-                            </Tabs.Trigger>
-                            <Tabs.Trigger value="datadisplay">
-                                <LuChartColumn /> Data Display
-                            </Tabs.Trigger>
-                        </Tabs.List>
-                        <Tabs.Content value="map" flex="1" display="flex" minH="0px">
-                            <InteractiveMap
-                                selectedCoords={selectedCoords}
-                                setSelectedCoords={setSelectedCoords}
-                                setErrorDialogMsg={setErrorDialogMsg}
-                            />
-                        </Tabs.Content>
-                        <Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
-                            <DataDisplay
-                                locationData={locationData}
-                            />
-                        </Tabs.Content>
-                    </Tabs.Root>
+                <Tabs.Root defaultValue="map" flex="1" display="flex" flexDirection="column">
+                    <Tabs.List>
+                        <Tabs.Trigger value="map">
+                            <LuMap /> Map
+                        </Tabs.Trigger>
+                        <Tabs.Trigger value="datadisplay">
+                            <LuChartColumn /> Data Display
+                        </Tabs.Trigger>
+                    </Tabs.List>
+                    <Tabs.Content value="map" flex="1" display="flex" minH="0px">
+                        <InteractiveMap
+                            selectedCoords={selectedCoords}
+                            setSelectedCoords={setSelectedCoords}
+                            setErrorDialogMsg={setErrorDialogMsg}
+                        />
+                    </Tabs.Content>
+                    <Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
+                        <DataDisplay
+                            locationData={locationData}
+                        />
+                    </Tabs.Content>
+                </Tabs.Root>
 
         </Flex>
     </>
