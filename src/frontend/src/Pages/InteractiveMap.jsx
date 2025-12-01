@@ -17,13 +17,25 @@ const InteractiveMap = ({
   const placeMarker = (lng, lat) => {
     if (!mapRef.current) return;
 
+    const isValid =
+      typeof lat === "number" &&
+      typeof lng === "number" &&
+      lat >= -90 && lat <= 90 &&
+      lng >= -180 && lng <= 180;
+
+    if (!isValid) {
+      setErrorDialogMsg(`Invalid coordinates: latitude must be between -90 and 90, 
+        longitude between -180 and 180.`);
+      return;
+    }
+
     try {
-        if (!markerRef.current) {
-            markerRef.current = new maplibregl.Marker();
-        }
-        markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
+      if (!markerRef.current) {
+        markerRef.current = new maplibregl.Marker();
+      }
+      markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
     } catch (err) {
-        setErrorDialogMsg(err.message);
+      setErrorDialogMsg(err.message);
     }
   };
 
