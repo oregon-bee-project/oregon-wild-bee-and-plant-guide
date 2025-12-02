@@ -5,8 +5,8 @@
 2. Ensure Node is installed: `node -v`
 3. Ensure npm is installed: `npm -v`
 4. Navigate to root directory: `cd ./..`
-5. Create a Virtual Environment: `py -m venv .venv`
-6. Activate Virtual Environment: `.venv/Scripts/activate`
+5. Create a Virtual Environment: `py -m venv .venv` or `python -m venv .venv`
+6. Activate Virtual Environment: `.venv/Scripts/activate` or `source .venv/bin/activate`
 7. Install dependencies: `pip install -r requirements.txt`
 8. Return to src directory: `cd ./src`
 

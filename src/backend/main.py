@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
 import parse_viz as pv
@@ -33,6 +33,8 @@ def location_root(lat: float, long: float):
     response_json = {
         "response": [],
         "county": "",
+        "lat": lat,
+        "long": long,
         "error": False,
         "err_msg" : ""
     }
@@ -40,7 +42,7 @@ def location_root(lat: float, long: float):
     sl.set_county(response_json, lat, long)
     
     if response_json["error"]:
-        return response_json
+        raise HTTPException(status_code=400, detail=response_json["err_msg"])
 
     sl.filter_df(response_json, full_df)
     

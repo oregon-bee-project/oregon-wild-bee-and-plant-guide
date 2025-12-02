@@ -16,8 +16,13 @@ const prompts = [
   },
 ];
 
-const PromptSidebar = ({ selectedPage, setSelectedPage }) => {
-  const [activePrompt, setActivePrompt] = useState(null);
+const PromptSidebar = ({
+    selectedPage,
+    setSelectedPage,
+    activePrompt,
+    setActivePrompt,
+    fetchLocationData
+}) => {
   return (
     <Box
       w="300px"
@@ -49,6 +54,7 @@ const PromptSidebar = ({ selectedPage, setSelectedPage }) => {
           onClick={() => {
             const selected = prompts.find((p) => p.id === activePrompt);
             console.log("Selected prompt:", selected);
+            fetchLocationData();
           }}
         >
           Run Selected Prompt
