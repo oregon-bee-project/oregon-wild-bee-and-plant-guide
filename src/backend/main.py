@@ -33,6 +33,8 @@ def location_root(lat: float, long: float):
     response_json = {
         "response": [],
         "county": "",
+        "lat": lat,
+        "long": long,
         "error": False,
         "err_msg" : ""
     }

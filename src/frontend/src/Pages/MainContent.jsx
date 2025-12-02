@@ -9,6 +9,7 @@ import ErrorDialog from "../CustomComponents/ErrorDialog";
 // This is the main webpage content - everything below the header
 
 const MainContent = () => {
+    const [currentTab, setCurrentTab] = useState("map");
     const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 	const [locationData, setLocationData] = useState(null);
     const [activePrompt, setActivePrompt] = useState(null);
@@ -46,6 +47,7 @@ const MainContent = () => {
         
             const json = await res.json();
             setLocationData(json);
+            setCurrentTab("datadisplay");
 		} catch (err) {
 			console.error(err.message);
             if (err.message == "County not found using Geopy Nominatim") {
@@ -72,7 +74,13 @@ const MainContent = () => {
                 fetchLocationData={fetchLocationData}
             />
 
-                <Tabs.Root defaultValue="map" flex="1" display="flex" flexDirection="column">
+                <Tabs.Root 
+                    value={currentTab}
+                    onValueChange={(e) => setCurrentTab(e.value)}
+                    flex="1"
+                    display="flex"
+                    flexDirection="column"
+                >
                     <Tabs.List>
                         <Tabs.Trigger value="map">
                             <LuMap /> Map
@@ -91,6 +99,7 @@ const MainContent = () => {
                     <Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
                         <DataDisplay
                             locationData={locationData}
+                            selectedCoords={selectedCoords}
                         />
                     </Tabs.Content>
                 </Tabs.Root>

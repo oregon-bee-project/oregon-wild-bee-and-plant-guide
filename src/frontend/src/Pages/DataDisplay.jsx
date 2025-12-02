@@ -1,8 +1,8 @@
-import { Box, Flex, Text, Button } from "@chakra-ui/react";
+import { Box, Flex, Skeleton, Button } from "@chakra-ui/react";
 import { LuFileUp } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
-const DataDisplay = ({ locationData }) => {
+const DataDisplay = ({ locationData, selectedCoords }) => {
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       {/* data display area */}
@@ -10,20 +10,19 @@ const DataDisplay = ({ locationData }) => {
         flex="1"
         borderWidth="2px"
         borderRadius="md"
-        bg="gray.100"
         alignItems="center"
         justifyContent="center"
         p={2}
         overflowY="auto"
       >
-        {locationData ? (
-          //<pre>{JSON.stringify(locationData, null, 2)}</pre>
+        {locationData && locationData.lat == selectedCoords.lat && locationData.long == selectedCoords.lng ? (
           <BeeStatsPanel data={locationData} />
         ) : (
-          <Text>
-            No location data found. Pick a valid location in Oregon and click
-            "Set Location".
-          </Text>
+            <Box>
+                {Array.from({ length: 9 }).map((_, i) => (
+                    <Skeleton key={i} height="30px" width="100%" mb="18px" />
+                ))}
+            </Box>
         )}
       </Box>
       <Flex gap="8px">
