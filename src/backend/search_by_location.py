@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 
+# WINTER IMPROVMENTS: remove this API/dependency
 from geopy.geocoders import Nominatim
 from geopy.exc import (
     GeocoderTimedOut,
@@ -11,11 +12,13 @@ from geopy.exc import (
     GeocoderQuotaExceeded,
 )
 
+# WINTER IMRPROVMENTS: remove these two lines of code
 PORT = 5556
 DATA_PATH = "../data/example_data.json" # change this for GitHub Pages
 
 # Seraches internet to find matching County depending on Lat and Long
 def get_county_from_coordinates(latitude, longitude):
+    # WINTER IMPROVEMENTS: uses passed in df rather than an API call
     geolocator = Nominatim(user_agent="bee-data")
 
     try:
@@ -64,8 +67,12 @@ def set_county(response, lat, long):
     
     return
 
+# WINTER IMPROVEMENTS: add functions like set_county() that set the name of other spatial boundaries that can be found in data
+
 # creates a dataframe using the county name and the excel sheet, then passes it into the response_json
 def filter_df(response, df):
+
+    # WINTER IMPROVEMENTS: Add options to filter by different categories, not just county
     
     # filter out rows that do not contain the county name
     df_filtered = df[df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
@@ -75,7 +82,10 @@ def filter_df(response, df):
     
     return
 
+# 
 def summary_stats(response, inat_key):
+    # WINTER IMPROVEMENTS: mostCommonBee and mostCommonPlant should be arrays to store a list of most common
+    # WINTER IMPROVEMENTS: mostCommonInteraction should be a new entry that is a list of most common interactions
     stats = {
         "numRows": 0,
         "numUniqueBees": 0,
