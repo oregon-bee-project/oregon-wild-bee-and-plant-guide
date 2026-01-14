@@ -12,10 +12,6 @@ from geopy.exc import (
     GeocoderQuotaExceeded,
 )
 
-# WINTER IMRPROVMENTS: remove these two lines of code
-PORT = 5556
-DATA_PATH = "../data/example_data.json" # change this for GitHub Pages
-
 # Seraches internet to find matching County depending on Lat and Long
 def get_county_from_coordinates(latitude, longitude):
     # WINTER IMPROVEMENTS: uses passed in df rather than an API call
