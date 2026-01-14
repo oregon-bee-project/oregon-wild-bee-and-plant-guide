@@ -16,7 +16,7 @@ import pickle
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import r2_score
 from sklearn.model_selection import cross_val_score, KFold, train_test_split
-from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from xgboost import XGBRegressor
 
@@ -61,7 +61,9 @@ def train_5fold_XGBoost(df: pd.DataFrame, parameters: dict = None) -> XGBRegress
     print(f"Cross-validation R^2 scores {scores}")
     print(f"Average R^2 score {scores.mean()}")
 
-    return model
+    pipeline.fit(X,y)
+
+    return pipeline
 
 
 def train_XGBoost(df: pd.DataFrame, parameters: dict = None, plot: bool = False) -> XGBRegressor:
@@ -143,7 +145,7 @@ def get_parameters() -> dict:
     return default_parameters
 
 
-def save_model_to_file(model: XGBRegressor) -> None:
+def save_model_to_file(model: Pipeline) -> None:
     model_pkl_file = "./backend/model/bee_diversity_reggressor_model.pkl"  
 
     with open(model_pkl_file, 'wb') as file:  
@@ -152,8 +154,9 @@ def save_model_to_file(model: XGBRegressor) -> None:
 
 def main() -> None:
     df = get_clean_observation_dataframe()
+    df_no_meta_data = df.drop(columns=["_min_lat", "_min_lon", "_num_cols"])
     params = get_parameters()
-    xgb = train_5fold_XGBoost(df, params)
+    xgb = train_5fold_XGBoost(df_no_meta_data, params)
     save_model_to_file(xgb)
 
 

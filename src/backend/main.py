@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
+import model.run_model as rm
 import parse_viz as pv
 
 app = FastAPI()
@@ -47,5 +48,18 @@ def location_root(lat: float, long: float):
     sl.filter_df(response_json, full_df)
     
     sl.summary_stats(response_json, inat_key)
+    
+    return response_json
+
+@app.get("/api/best-plants-to-plant/")
+def run_model_root(lat: float, long: float): # is the root naming convention standard
+    response_json = {
+        "response": [],
+        "error": False,
+        "err_msg" : ""
+    }
+    
+    # TODO: Finish implementing this
+    rm.get_best_plants(response_json, lat, long)
     
     return response_json

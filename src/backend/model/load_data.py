@@ -59,18 +59,18 @@ def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
     df["grid_col"] = ((df["decimalLongitude"] - min_lon) / lon_cell_deg).astype(int)
 
     num_cols = df["grid_col"].max() + 1
-    df["grid_cell_flattened"] = df["grid_row"] * num_cols + df["grid_col"]
+    df["region"] = df["grid_row"] * num_cols + df["grid_col"]
 
     # group plant and pollinator counts by region
     plant_counts = (
-        df.groupby('grid_cell_flattened')['plantINatId']
+        df.groupby('region')['plantINatId']
         .value_counts()
         .unstack(fill_value=0)
         .add_prefix("plant_")
     )
 
     pollinator_counts = (
-        df.groupby('grid_cell_flattened')['pollinatorINatId']
+        df.groupby('region')['pollinatorINatId']
         .value_counts()
         .unstack(fill_value=0)
         .add_prefix("pollinator_")
@@ -82,10 +82,20 @@ def preprocess_observations(df: pd.DataFrame) -> pd.DataFrame:
     pollinator_cols = [c for c in region_summary.columns if c.split("_")[0] == "pollinator"]
     region_summary["pollinator_count"] = region_summary[pollinator_cols].sum(axis=1)
 
-    # compute shannon diversity index for pollinators in a region
+    # compute shannon diversity index for pollinators in a region before OHE
     p = region_summary[pollinator_cols].div(region_summary["pollinator_count"], axis=0) # every region has at least 1 pollinator so no divide by 0
     p = p.replace(0, np.nan)
     region_summary["bee_shannon_diversity_index"] = - (p * np.log(p)).sum(axis=1)
+
+    # ohe pollinators and plants instead of using counts
+    region_summary[pollinator_cols] = (region_summary[pollinator_cols] > 0).astype(int)
+
+    plant_cols = [c for c in region_summary.columns if c.split("_")[0] == "plant"]
+    region_summary[plant_cols] = (region_summary[plant_cols] > 0).astype(int)
+
+    region_summary["_min_lat"] = min_lat
+    region_summary["_min_lon"] = min_lon
+    region_summary["_num_cols"] = num_cols
 
     return region_summary
 
@@ -103,7 +113,7 @@ def get_clean_observation_dataframe() -> pd.DataFrame:
 def main() -> None:
     df_observations, df_iNat_lookup = load_data()
     df_cleaned_observations = preprocess_observations(df_observations)
-    df_cleaned_observations.to_csv("backend/model/cleaned_observations_by_region.csv", index=False)
+    #df_cleaned_observations.to_csv("backend/model/cleaned_observations_by_region.csv", index=False)
     print(df_cleaned_observations)
 
 
