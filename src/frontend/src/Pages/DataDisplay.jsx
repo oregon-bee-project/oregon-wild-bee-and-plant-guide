@@ -4,11 +4,15 @@ import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
 const DataDisplay = ({ locationData, selectedCoords }) => {
   // On click of export, send post request to backend to generate CSV
+  // Render API base
+  const API_BASE = import.meta.env.PROD
+    ? "https://bee-data-api.onrender.com" // this is what the url prefix will be in production
+    : "";
   const handleExport = async () => {
     if (!locationData) return;
 
     try {
-      const response = await fetch("/api/export-csv", {
+      const response = await fetch(`${API_BASE}/api/export-csv`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
