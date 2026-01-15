@@ -86,10 +86,7 @@ def summary_stats(response, inat_key):
         "numRows": 0,
         "numUniqueBees": 0,
         "numUniquePlants": 0,
-        "mostCommonBee": {
-            "scientificName": "",
-            "count": 0
-        },
+        "mostCommonBees": [],
         "mostCommonPlant": {
             "iNatId": "",
             "iNatTaxonName": "",
@@ -130,7 +127,6 @@ def summary_stats(response, inat_key):
 
     bee_counts = Counter()
     plant_counts = Counter()
-    most_common_bee_name = ""
     # Keep a reference row for each plant id so we can pull taxonomic fields later
     plant_rows_map = {}
 
@@ -139,9 +135,6 @@ def summary_stats(response, inat_key):
         bee_name = normalize_string(row.get("scientificName")) or normalize_string(row.get("specificEpithetVolDet"))
         if bee_name:
             bee_counts[bee_name] += 1
-            if bee_counts[bee_name] > stats["mostCommonBee"]["count"]:
-                stats["mostCommonBee"]["count"] = bee_counts[bee_name]
-                most_common_bee_name = bee_name
 
         # Plant counts - only plantINatId is available in the dataset
         plant_value = normalize_string(row.get("plantINatId"))
@@ -153,9 +146,11 @@ def summary_stats(response, inat_key):
     stats["numUniqueBees"] = len(bee_counts)
     stats["numUniquePlants"] = len(plant_counts)
 
-    if most_common_bee_name:
-        stats["mostCommonBee"]["count"] = bee_counts[most_common_bee_name]
-        stats["mostCommonBee"]["scientificName"] = most_common_bee_name
+    for bee, count in bee_counts.most_common(5):
+        stats["mostCommonBees"].append({
+            "scientificName": bee,
+            "count": count
+        })
 
     if plant_counts:
         for plant_id, count in plant_counts.most_common():
