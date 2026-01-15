@@ -92,7 +92,8 @@ def summary_stats(response, inat_key):
             "iNatTaxonName": "",
             "commonName": "",
             "iNatURL": "",
-            "count": 0
+            "count": 0,
+            "topBees": []
         }
     }
 
@@ -129,6 +130,7 @@ def summary_stats(response, inat_key):
     plant_counts = Counter()
     # Keep a reference row for each plant id so we can pull taxonomic fields later
     plant_rows_map = {}
+    plant_bee_interactions = {}
 
     for row in rows:
         # Pollinator counts
@@ -142,6 +144,11 @@ def summary_stats(response, inat_key):
             plant_counts[plant_value] += 1
             if plant_value not in plant_rows_map:
                 plant_rows_map[plant_value] = row
+
+            if bee_name:
+                if plant_value not in plant_bee_interactions:
+                    plant_bee_interactions[plant_value] = Counter()
+                plant_bee_interactions[plant_value][bee_name] += 1
 
     stats["numUniqueBees"] = len(bee_counts)
     stats["numUniquePlants"] = len(plant_counts)
@@ -184,6 +191,13 @@ def summary_stats(response, inat_key):
             stats["mostCommonPlant"]["iNatTaxonName"] = taxon_name
             stats["mostCommonPlant"]["iNatId"] = plant_identifier or ""
             stats["mostCommonPlant"]["iNatURL"] = plant_image_url
+
+            if plant_identifier in plant_bee_interactions:
+                for bee, count in plant_bee_interactions[plant_identifier].most_common(5):
+                    stats["mostCommonPlant"]["topBees"].append({
+                        "scientificName": bee,
+                        "count": count
+                    })
             break
 
     response["response"] = stats
