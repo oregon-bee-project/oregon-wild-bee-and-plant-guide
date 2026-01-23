@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 
+# WINTER IMPROVMENTS: remove this API/dependency
 from geopy.geocoders import Nominatim
 from geopy.exc import (
     GeocoderTimedOut,
@@ -11,11 +12,9 @@ from geopy.exc import (
     GeocoderQuotaExceeded,
 )
 
-PORT = 5556
-DATA_PATH = "../data/example_data.json" # change this for GitHub Pages
-
 # Seraches internet to find matching County depending on Lat and Long
 def get_county_from_coordinates(latitude, longitude):
+    # WINTER IMPROVEMENTS: uses passed in df rather than an API call
     geolocator = Nominatim(user_agent="bee-data")
 
     try:
@@ -64,8 +63,12 @@ def set_county(response, lat, long):
     
     return
 
+# WINTER IMPROVEMENTS: add functions like set_county() that set the name of other spatial boundaries that can be found in data
+
 # creates a dataframe using the county name and the excel sheet, then passes it into the response_json
 def filter_df(response, df):
+
+    # WINTER IMPROVEMENTS: Add options to filter by different categories, not just county
     
     # filter out rows that do not contain the county name
     df_filtered = df[df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
@@ -75,21 +78,22 @@ def filter_df(response, df):
     
     return
 
+# 
 def summary_stats(response, inat_key):
+    # WINTER IMPROVEMENTS: mostCommonBee and mostCommonPlant should be arrays to store a list of most common
+    # WINTER IMPROVEMENTS: mostCommonInteraction should be a new entry that is a list of most common interactions
     stats = {
         "numRows": 0,
         "numUniqueBees": 0,
         "numUniquePlants": 0,
-        "mostCommonBee": {
-            "scientificName": "",
-            "count": 0
-        },
+        "mostCommonBees": [],
         "mostCommonPlant": {
             "iNatId": "",
             "iNatTaxonName": "",
             "commonName": "",
             "iNatURL": "",
-            "count": 0
+            "count": 0,
+            "topBees": []
         }
     }
 
@@ -124,18 +128,15 @@ def summary_stats(response, inat_key):
 
     bee_counts = Counter()
     plant_counts = Counter()
-    most_common_bee_name = ""
     # Keep a reference row for each plant id so we can pull taxonomic fields later
     plant_rows_map = {}
+    plant_bee_interactions = {}
 
     for row in rows:
         # Pollinator counts
         bee_name = normalize_string(row.get("scientificName")) or normalize_string(row.get("specificEpithetVolDet"))
         if bee_name:
             bee_counts[bee_name] += 1
-            if bee_counts[bee_name] > stats["mostCommonBee"]["count"]:
-                stats["mostCommonBee"]["count"] = bee_counts[bee_name]
-                most_common_bee_name = bee_name
 
         # Plant counts - only plantINatId is available in the dataset
         plant_value = normalize_string(row.get("plantINatId"))
@@ -144,12 +145,19 @@ def summary_stats(response, inat_key):
             if plant_value not in plant_rows_map:
                 plant_rows_map[plant_value] = row
 
+            if bee_name:
+                if plant_value not in plant_bee_interactions:
+                    plant_bee_interactions[plant_value] = Counter()
+                plant_bee_interactions[plant_value][bee_name] += 1
+
     stats["numUniqueBees"] = len(bee_counts)
     stats["numUniquePlants"] = len(plant_counts)
 
-    if most_common_bee_name:
-        stats["mostCommonBee"]["count"] = bee_counts[most_common_bee_name]
-        stats["mostCommonBee"]["scientificName"] = most_common_bee_name
+    for bee, count in bee_counts.most_common(5):
+        stats["mostCommonBees"].append({
+            "scientificName": bee,
+            "count": count
+        })
 
     if plant_counts:
         for plant_id, count in plant_counts.most_common():
@@ -183,6 +191,13 @@ def summary_stats(response, inat_key):
             stats["mostCommonPlant"]["iNatTaxonName"] = taxon_name
             stats["mostCommonPlant"]["iNatId"] = plant_identifier or ""
             stats["mostCommonPlant"]["iNatURL"] = plant_image_url
+
+            if plant_identifier in plant_bee_interactions:
+                for bee, count in plant_bee_interactions[plant_identifier].most_common(5):
+                    stats["mostCommonPlant"]["topBees"].append({
+                        "scientificName": bee,
+                        "count": count
+                    })
             break
 
     response["response"] = stats

@@ -16,7 +16,7 @@ const BeeStatsPanel = ({ data }) => {
     numRows,
     numUniqueBees,
     numUniquePlants,
-    mostCommonBee,
+    mostCommonBees,
     mostCommonPlant,
   } = response;
 
@@ -61,12 +61,16 @@ const BeeStatsPanel = ({ data }) => {
           {/* Most Common Bee */}
           <Box flex={1} p={5} borderRadius="2xl" boxShadow="md" bg="yellow.50">
             <Heading size="sm" mb={2}>
-              🐝 Most Common Bee
+              🐝 Most Common Bees
             </Heading>
-            <Text fontSize="lg" fontWeight="bold" fontStyle="italic">
-              {mostCommonBee.scientificName || "N/A"}
-            </Text>
-            <Text mt={2}>Observations: {mostCommonBee.count}</Text>
+            <VStack align="stretch" spacing={2}>
+              {mostCommonBees?.map((bee, idx) => (
+                <Flex key={idx} justify="space-between">
+                  <Text fontStyle="italic" fontWeight="bold">{bee.scientificName}</Text>
+                  <Text>{bee.count}</Text>
+                </Flex>
+              ))}
+            </VStack>
           </Box>
 
           {/* Most Common Plant */}
@@ -84,7 +88,22 @@ const BeeStatsPanel = ({ data }) => {
                 {mostCommonPlant.iNatTaxonName}
               </Text>
             )}
-            <Text mt={2}>Observations: {mostCommonPlant.count}</Text>
+            <Text mt={2}>Observed Interactions: {mostCommonPlant.count}</Text>
+
+            {mostCommonPlant.topBees?.length > 0 && (
+              <Box mt={3}>
+                <Text fontWeight="bold" fontSize="sm" mb={1}>Top Visitors:</Text>
+                <VStack align="stretch" spacing={1}>
+                  {mostCommonPlant.topBees.map((bee, idx) => (
+                    <Flex key={idx} justify="space-between" fontSize="sm">
+                      <Text fontStyle="italic">{bee.scientificName}</Text>
+                      <Text>{bee.count}</Text>
+                    </Flex>
+                  ))}
+                </VStack>
+              </Box>
+            )}
+
             {mostCommonPlant.iNatURL && (
               <Image
                 src={mostCommonPlant.iNatURL}
