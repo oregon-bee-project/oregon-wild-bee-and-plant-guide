@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Flex, Tabs, IconButton, useDisclosure, Drawer } from "@chakra-ui/react";
+import { Flex, Tabs, Button, useDisclosure, Drawer } from "@chakra-ui/react";
 import { LuChartColumn, LuMap, LuMenu } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
@@ -70,16 +70,14 @@ const MainContent = () => {
 
         <Flex h="100%" p={{ base: "5px", md: "10px" }} gap={{ base: "10px", md: "30px" }} direction={{ base: "column", md: "row" }}>
             {/* Mobile hamburger menu button - only visible on mobile */}
-            <IconButton
+            <Button
                 aria-label="Open sidebar"
                 display={{ base: "flex", md: "none" }}
                 onClick={onOpen}
-                alignSelf="flex-start"
-                mb={2}
                 width="100%"
             >
-                <LuMenu /> Prompts
-            </IconButton>
+                <LuMenu /> Show Prompts
+            </Button>
 
             {/* Desktop sidebar - hidden on mobile */}
             <PromptSidebar
@@ -95,6 +93,7 @@ const MainContent = () => {
                 onOpenChange={(e) => {
                     if (!e.open) onClose();
                 }}
+                placement="top"
             >
                 <Drawer.Backdrop />
                 <Drawer.Content rounded="md">
