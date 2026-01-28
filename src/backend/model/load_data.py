@@ -43,17 +43,19 @@ def create_interactions_matrix(df: pd.DataFrame) -> pd.DataFrame:
     entry
     """
 
-    # Each unique bee is a row, and each unique plant is a column. 
-    # Each entry is the number of observations between the plant and bee.
-    interaction_matrix = pd.crosstab(df['pollinatorINatId'], df['plantINatId'])
+    # TF: Raw counts with Rows = Bees, Cols = Plants
+    interaction_matrix = pd.crosstab(df['pollinatorINatId'].astype(str), df['plantINatId'].astype(str))
 
-    # Weight each entry by log_10(total interactions/distinct plants visited)
-    total_interactions = interaction_matrix.sum(axis=1) 
-    distinct_plants_visited = (interaction_matrix > 0).sum(axis=1)
-    weights = np.log10(total_interactions / distinct_plants_visited)
-    weighted_interaction_matrix = interaction_matrix.multiply(weights, axis=0)
+    # SVD works better when data compressed to be realtively close
+    matrix_log = pd.DataFrame(np.log1p(interaction_matrix))
 
-    return weighted_interaction_matrix
+    total_bees = interaction_matrix.shape[0]
+    bees_per_plant = (interaction_matrix > 0).sum(axis=0)
+    idf_weights = np.log10(total_bees / (bees_per_plant + 1))
+    
+    tfidf_matrix = matrix_log.multiply(idf_weights, axis=1)
+
+    return tfidf_matrix
 
 
 def main() -> None:
