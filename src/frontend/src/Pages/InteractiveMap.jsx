@@ -77,9 +77,9 @@ const InteractiveMap = ({
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
-      <Flex gap={2}>
+      <Flex gap={2} direction={{ base: "column", md: "row" }}>
         {/* Lat/Long input fields */}
-        <InputGroup startAddon="Latitude">
+        <InputGroup startAddon="Latitude" flex={{ base: "1", md: "auto" }}>
           <Input
             placeholder="Type or click on the map!"
             type="number"
@@ -89,7 +89,7 @@ const InteractiveMap = ({
             }
           />
         </InputGroup>
-        <InputGroup startAddon="Longitude">
+        <InputGroup startAddon="Longitude" flex={{ base: "1", md: "auto" }}>
           <Input
             placeholder="Type or click on the map!"
             type="number"

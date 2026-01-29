@@ -21,8 +21,8 @@ const BeeStatsPanel = ({ data }) => {
   } = response;
 
   return (
-    <Box bg="white" p={6} borderRadius="2xl" boxShadow="lg" width="100%">
-      <VStack spacing={6} align="stretch">
+    <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
+      <VStack spacing={{ base: 4, md: 6 }} align="stretch">
         {/* County Header */}
         <Heading size="lg" textAlign="center">
           {county} County
@@ -34,21 +34,21 @@ const BeeStatsPanel = ({ data }) => {
 
         {/* Top Stats */}
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-          <Box p={4} borderRadius="xl" boxShadow="sm" bg="gray.50">
+          <Box p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" bg="gray.50">
             <Text fontWeight="bold" fontSize="sm">
               Total Records
             </Text>
             <Text fontSize="2xl">{numRows.toLocaleString()}</Text>
           </Box>
 
-          <Box p={4} borderRadius="xl" boxShadow="sm" bg="gray.50">
+          <Box p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" bg="gray.50">
             <Text fontWeight="bold" fontSize="sm">
               Unique Bee Species
             </Text>
             <Text fontSize="2xl">{numUniqueBees}</Text>
           </Box>
 
-          <Box p={4} borderRadius="xl" boxShadow="sm" bg="gray.50">
+          <Box p={{ base: 3, md: 4 }} borderRadius="xl" boxShadow="sm" bg="gray.50">
             <Text fontWeight="bold" fontSize="sm">
               Unique Plant Species
             </Text>
@@ -57,9 +57,9 @@ const BeeStatsPanel = ({ data }) => {
         </SimpleGrid>
 
         {/* Feature Section */}
-        <Flex direction={{ base: "column", md: "row" }} gap={6}>
+        <Flex direction={{ base: "column", md: "row" }} gap={{ base: 4, md: 6 }}>
           {/* Most Common Bee */}
-          <Box flex={1} p={5} borderRadius="2xl" boxShadow="md" bg="yellow.50">
+          <Box flex={1} p={{ base: 4, md: 5 }} borderRadius="2xl" boxShadow="md" bg="yellow.50">
             <Heading size="sm" mb={2}>
               🐝 Most Common Bees
             </Heading>
@@ -74,7 +74,7 @@ const BeeStatsPanel = ({ data }) => {
           </Box>
 
           {/* Most Common Plant */}
-          <Box flex={1} p={5} borderRadius="2xl" boxShadow="md" bg="green.50">
+          <Box flex={1} p={{ base: 4, md: 5 }} borderRadius="2xl" boxShadow="md" bg="green.50">
             <Heading size="sm" mb={2}>
               🌿 Most Common Plant
             </Heading>

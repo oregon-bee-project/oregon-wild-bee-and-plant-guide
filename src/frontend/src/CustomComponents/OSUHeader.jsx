@@ -14,8 +14,8 @@ const OSUHeader = () => {
     <Box
       as="header"
       width="100%"
-      minH="144px"
-      maxH="144px"
+      minH={{ base: "144px", md: "144px" }}
+      maxH={{ base: "144px", md: "144px" }}
       display="flex"
       flexDirection="column"
       bg="#000000"
@@ -25,8 +25,10 @@ const OSUHeader = () => {
       p={0}
     >
       <Flex
-        align="center"
+        align={{base: "left", md: "center"}}
         flex="1"
+        direction={{ base: "column", md: "row" }}
+        textAlign={{ base: "center", md: "left" }}
       >
         {/* OSU Logo */}
         <Link
@@ -37,33 +39,36 @@ const OSUHeader = () => {
           <Image
             src={OSULogo}
             alt="Oregon State University Logo"
-            width="250px"
-            ml="52px"
-            mr="19px"
+            width={{ base: "200px", md: "250px" }}
+            mt={{ base: "5px", md: "0"}}
+            ml={{ base: "20px", md: "52px" }}
+            mr={{ base: "0", md: "19px" }}
+            mb={{ base: "10px", md: "0" }}
           />
         </Link>
 
-        {/* vertical separator */}
+        {/* vertical separator - hidden on mobile */}
         <Box
-          h="100%"
-          w="1px"
+          h={{ base: "1px", md: "100%" }}
+          w={{ base: "100%", md: "1px" }}
           bg="#666666"
+          display={{ base: "none", md: "block" }}
         />
 
         {/* title text */}
-        <Box pl="20px">
-          <Stack spacing={0} pb="10px">
+        <Box pl={{ base: "20px", md: "20px" }}>
+          <Stack spacing={0} pb={{ base: "5px", md: "10px" }}>
           <Link
               href="https://agsci.oregonstate.edu/"
-              _hover={{ 
+              _hover={{
                 textDecoration: "underline",
                 textDecorationColor: "white"
               }}
               _focus={{ outline: 'none' }}
               _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
             >
-              <Text 
-                fontSize="16px"
+              <Text
+                fontSize={{ base: "12px", md: "16px" }}
                 fontFamily="Stratum2Light"
                 fontWeight="600"
                 textTransform="uppercase"
@@ -71,21 +76,21 @@ const OSUHeader = () => {
                 color="white"
               >
                 COLLEGE OF AGRICULTURAL SCIENCES{" "}
-                <Text as="span" fontSize="16px" color="#666666">»</Text>
+                <Text as="span" fontSize={{ base: "12px", md: "16px" }} color="#666666">»</Text>
               </Text>
             </Link>
 
             <Link
               href="https://agsci.oregonstate.edu/bee-atlas"
-              _hover={{ 
+              _hover={{
                 textDecoration: "underline",
                 textDecorationColor: "white"
               }}
               _focus={{ outline: 'none' }}
               _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
             >
-              <Text 
-                fontSize="24px"
+              <Text
+                fontSize={{ base: "18px", md: "24px" }}
                 fontFamily="Stratum2Light"
                 fontWeight="600"
                 textTransform="uppercase"

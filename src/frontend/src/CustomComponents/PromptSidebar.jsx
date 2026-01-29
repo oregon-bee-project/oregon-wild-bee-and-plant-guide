@@ -17,20 +17,20 @@ const prompts = [
 ];
 
 const PromptSidebar = ({
-    selectedPage,
-    setSelectedPage,
+    display,
     activePrompt,
     setActivePrompt,
-    fetchLocationData
+    fetchLocationData,
+    onPromptSelect
 }) => {
   return (
     <Box
-      w="300px"
-      h="100%"
+      w={{ base: "100%", md: "300px" }}
+      h={{ base: "auto", md: "100%" }}
       borderRadius="md"
       borderWidth="2px"
       p={4}
-      display="flex"
+      display={display}
       flexDirection="column"
       justifyContent="space-between"
     >
@@ -55,6 +55,7 @@ const PromptSidebar = ({
             const selected = prompts.find((p) => p.id === activePrompt);
             console.log("Selected prompt:", selected);
             fetchLocationData();
+            onPromptSelect?.(); // Close drawer on mobile after running prompt
           }}
         >
           Run Selected Prompt
