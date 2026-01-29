@@ -31,8 +31,8 @@ def print_log(interaction_matrix, var_ratio, predicted_matrix):
   print(predicted_matrix)
 
 def save_to_csv(predicted_matrix):
-  pd.DataFrame(predicted_matrix).to_csv("predicted_interactions.csv")
-  print("Saved to 'predicted_interactions.csv in the root folder")
+  pd.DataFrame(predicted_matrix).to_csv("./src/data/predicted_interactions.csv")
+  print("Saved to './src/data/predicted_interactions.csv")
 
 if __name__ == "__main__":
   interaction_matrix = gen_interaction()
