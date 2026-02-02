@@ -14,6 +14,11 @@ const prompts = [
     title: "Plants",
     description: "What plants should I grow to support bees in my area?",
   },
+  {
+    id: 3,
+    title: "Detailed Summary Report",
+    description: "Show me a detailed report of bee and plant species in my area"
+  }
 ];
 
 const PromptSidebar = ({
