@@ -26,35 +26,38 @@ const PromptSidebar = ({
     activePrompt,
     setActivePrompt,
     fetchLocationData,
-    onPromptSelect
+    onPromptSelect,
+    showButton = true
 }) => {
   return (
-    <Box
-      w={{ base: "100%", md: "300px" }}
-      h={{ base: "auto", md: "100%" }}
-      borderRadius="md"
-      borderWidth="2px"
-      p={4}
-      display={display}
-      flexDirection="column"
-      justifyContent="space-between"
-    >
-      {/* vertical stack of labels, input fields, buttons, etc. */}
-      <VStack align="stretch" spacing={4}>
-        <Text>Prompts</Text>
-        {prompts.map((prompt) => (
-          <PromptItem
-            key={prompt.id}
-            title={prompt.title}
-            description={prompt.description}
-            selected={activePrompt === prompt.id}
-            onClick={() => setActivePrompt(prompt.id)}
-          />
-        ))}
-      </VStack>
-      <Flex justify="center">
+    <VStack spacing={0}>
+      <Box
+        w={{ base: "100%", md: "300px" }}
+        h={{ base: "auto", md: "100%" }}
+        borderRadius="md"
+        borderWidth="2px"
+        p={4}
+        display={display}
+        flexDirection="column"
+        justifyContent="space-between"
+      >
+        {/* vertical stack of labels, input fields, buttons, etc. */}
+        <VStack align="stretch" spacing={4}>
+          <Text>Prompts</Text>
+          {prompts.map((prompt) => (
+            <PromptItem
+              key={prompt.id}
+              title={prompt.title}
+              description={prompt.description}
+              selected={activePrompt === prompt.id}
+              onClick={() => setActivePrompt(prompt.id)}
+            />
+          ))}
+        </VStack>
+      </Box>
+      {showButton && (
         <Button
-          colorScheme="blue"
+          w={{ base: "100%", md: "300px" }}
           isDisabled={!activePrompt}
           onClick={() => {
             const selected = prompts.find((p) => p.id === activePrompt);
@@ -65,8 +68,8 @@ const PromptSidebar = ({
         >
           Run Selected Prompt
         </Button>
-      </Flex>
-    </Box>
+      )}
+    </VStack>
   );
 };
 

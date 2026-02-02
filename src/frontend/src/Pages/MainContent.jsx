@@ -71,7 +71,8 @@ const MainContent = () => {
         <Flex h="100%" p={{ base: "5px", md: "10px" }} gap={{ base: "10px", md: "30px" }} direction={{ base: "column", md: "row" }}>
             {/* Mobile hamburger menu button - only visible on mobile */}
             <Button
-                aria-label="Open sidebar"
+                variant="outline"
+                borderColor="black"
                 display={{ base: "flex", md: "none" }}
                 onClick={onOpen}
                 width="100%"
@@ -85,6 +86,7 @@ const MainContent = () => {
                 activePrompt={activePrompt}
                 setActivePrompt={setActivePrompt}
                 fetchLocationData={fetchLocationData}
+                showButton={true}
             />
 
             {/* Mobile drawer for sidebar */}
@@ -103,6 +105,7 @@ const MainContent = () => {
                             setActivePrompt={setActivePrompt}
                             fetchLocationData={fetchLocationData}
                             onPromptSelect={onClose}
+                            showButton={false}
                         />
                     </Drawer.Body>
                 </Drawer.Content>
