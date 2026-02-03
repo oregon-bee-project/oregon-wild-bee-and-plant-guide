@@ -1,6 +1,6 @@
 import { Box, Button, Text, VStack, Flex } from "@chakra-ui/react";
 import PromptItem from "./PromptItem";
-import { useState } from "react";
+import { LuPlay } from "react-icons/lu";
 
 // Defined custom prompts
 const prompts = [
@@ -58,6 +58,8 @@ const PromptSidebar = ({
       {showButton && (
         <Button
           w={{ base: "100%", md: "300px" }}
+          bg="green.600"
+          _hover={{ bg: "green.500" }}
           isDisabled={!activePrompt}
           onClick={() => {
             const selected = prompts.find((p) => p.id === activePrompt);
@@ -66,7 +68,7 @@ const PromptSidebar = ({
             onPromptSelect?.(); // Close drawer on mobile after running prompt
           }}
         >
-          Run Selected Prompt
+          <LuPlay /> Run Selected Prompt
         </Button>
       )}
     </VStack>
