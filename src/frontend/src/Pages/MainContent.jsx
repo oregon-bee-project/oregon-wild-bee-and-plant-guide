@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Flex, Button, useDisclosure, Drawer } from "@chakra-ui/react";
-import { LuMenu } from "react-icons/lu";
+import { Flex, Button, useDisclosure, Drawer, Text } from "@chakra-ui/react";
+import { LuMenu, LuCheck } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
@@ -79,7 +79,17 @@ const MainContent = () => {
                         onClick={onOpen}
                         width="100%"
                     >
-                        <LuMenu /> Show Prompts
+                        {activePrompt ? (
+                            <Flex align="center" gap={2}>
+                                <LuCheck />
+                                <Text>Prompt Selected</Text>
+                            </Flex>
+                        ) : (
+                            <Flex align="center" gap={2}>
+                                <LuMenu />
+                                <Text>Show Prompts</Text>
+                            </Flex>
+                        )}
                     </Button>
 
                     {/* Desktop sidebar - hidden on mobile */}
@@ -109,6 +119,13 @@ const MainContent = () => {
                                     onPromptSelect={onClose}
                                     showButton={false}
                                 />
+                                <Button
+                                    mt="2"
+                                    w="100%"
+                                    onClick={onClose}
+                                >
+                                    Done
+                                </Button>
                             </Drawer.Body>
                         </Drawer.Content>
                     </Drawer.Root>
