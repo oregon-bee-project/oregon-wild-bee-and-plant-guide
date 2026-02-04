@@ -107,14 +107,17 @@ const InteractiveMap = ({
           />
         </InputGroup>
 
-        <Select.Root collection={overlays} flex={{ base: "1", md: "auto" }}>
+        <Select.Root
+          collection={overlays}
+          flex={{ base: "1", md: "auto" }}
+          defaultValue="county"
+        >
           <Select.HiddenSelect />
           <Select.Control>
             <Select.Trigger>
               <Select.ValueText placeholder="Select overlay" />
             </Select.Trigger>
             <Select.IndicatorGroup>
-              <Select.ClearTrigger />
               <Select.Indicator />
             </Select.IndicatorGroup>
           </Select.Control>
