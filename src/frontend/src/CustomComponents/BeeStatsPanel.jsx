@@ -7,11 +7,12 @@ import {
   VStack,
   Heading,
 } from "@chakra-ui/react";
+import { LuInfo } from "react-icons/lu";
 
 const BeeStatsPanel = ({ data }) => {
   if (!data || !data.response) return null;
 
-  const { response, county } = data;
+  const { response, region_type, region_name, region_key, lat, long} = data;
   const {
     numRows,
     numUniqueBees,
@@ -23,9 +24,9 @@ const BeeStatsPanel = ({ data }) => {
   return (
     <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
       <VStack spacing={{ base: 4, md: 6 }} align="stretch">
-        {/* County Header */}
+        {/* Region Header */}
         <Heading size="lg" textAlign="center">
-          {county} County
+          {region_name}
         </Heading>
 
         <Text textAlign="center" fontSize="md" color="gray.600">
@@ -117,6 +118,13 @@ const BeeStatsPanel = ({ data }) => {
               />
             )}
           </Box>
+        </Flex>
+
+        <Flex align="center" justify="center" gap={2} color="gray.500" fontSize="xs" mt={2}>
+          <LuInfo />
+          <Text>
+            Region Type: {region_type} | Lat: {lat} | Long: {long}
+          </Text>
         </Flex>
       </VStack>
     </Box>

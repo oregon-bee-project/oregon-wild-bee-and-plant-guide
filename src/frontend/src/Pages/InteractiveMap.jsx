@@ -1,116 +1,174 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Flex, Input, InputGroup, Button, Portal, Select, createListCollection } from "@chakra-ui/react";
+import { Box, Flex, Input, Group, InputAddon, Button, Portal, Select, createListCollection } from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const overlays = createListCollection({
   items: [
-    { label: "County", value: "county" },
-    { label: "Ecoregion", value: "ecoregion" },
-    { label: "National Forest", value: "national-forest" },
+    { label: "County", value: "county", color: "Orange" },
+    { label: "Ecoregion", value: "ecoregion", color: "Green" },
+    { label: "National Forest", value: "national-forest", color: "Brown" },
   ],
 })
 
-const InteractiveMap = ({ 
-  selectedCoords, 
+const InteractiveMap = ({
+  selectedCoords,
   setSelectedCoords,
-  setErrorDialogMsg
+  setErrorDialogMsg,
+  setSelectedRegion
 }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
-  const markerRef = useRef(null); 
+  const markerRef = useRef(null);
 
-  // helper function to place marker on click or type
-  const placeMarker = (lng, lat) => {
+  const handleLayerChange = (e) => {
+    const selectedCategory = e.value[0];
+    setSelectedRegion(selectedCategory);
     if (!mapRef.current) return;
 
-    const isValid =
-      typeof lat === "number" &&
-      typeof lng === "number" &&
-      lat >= -90 && lat <= 90 &&
-      lng >= -180 && lng <= 180;
+    overlays.items.forEach((item) => {
+      const layerId = `${item.value}-layer`;
+      const outlineId = `${layerId}-outline`;
+      const visibility = item.value === selectedCategory ? "visible" : "none";
 
-    if (!isValid) {
-      setErrorDialogMsg(`Invalid coordinates: latitude must be between -90 and 90, 
-        longitude between -180 and 180.`);
-      return;
-    }
-
-    try {
-      if (!markerRef.current) {
-        markerRef.current = new maplibregl.Marker();
+      if (mapRef.current.getLayer(layerId)) {
+        mapRef.current.setLayoutProperty(layerId, "visibility", visibility);
+        mapRef.current.setLayoutProperty(outlineId, "visibility", visibility);
       }
-      markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
-    } catch (err) {
-      setErrorDialogMsg(err.message);
-    }
+    });
   };
 
-  // initialize map + handle click to place marker
+  const placeMarker = (lng, lat) => {
+    if (!mapRef.current) return;
+    if (!markerRef.current) {
+      markerRef.current = new maplibregl.Marker();
+    }
+    markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
+  };
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: "./custom-map-style.json",
-      center: [-120, 44],
+      center: [-120.55, 43.80],
       zoom: 6,
     });
 
     mapRef.current = map;
+    let hoveredFeature = null;
+
+    map.on("load", () => {
+      // Set default region to match UI default
+      setSelectedRegion("county");
+
+      overlays.items.forEach((item) => {
+        const sourceId = `${item.value}-source`;
+        const layerId = `${item.value}-layer`;
+
+        // 1. Add Source
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: `/bee-plant-data-exploration/GeoJSON/${item.value}.json`,
+          generateId: true,
+        });
+
+        // 2. Add Fill Layer
+        map.addLayer({
+          id: layerId,
+          type: "fill",
+          source: sourceId,
+          layout: { visibility: item.value === "county" ? "visible" : "none" },
+          paint: {
+            "fill-color": item.color,
+            "fill-opacity": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false],
+              0.6,
+              0,
+            ],
+          },
+        });
+
+        // 3. Add Border Layer
+        map.addLayer({
+          id: `${layerId}-outline`,
+          type: "line",
+          source: sourceId,
+          layout: { visibility: item.value === "county" ? "visible" : "none" },
+          paint: {
+            "line-color": "#000000",
+            "line-opacity": 0.2,
+            "line-width": 0.5,
+          },
+        });
+
+        // Hover Logic
+        map.on("mousemove", layerId, (e) => {
+          if (e.features.length > 0) {
+            if (hoveredFeature) {
+              map.setFeatureState(
+                { source: hoveredFeature.source, id: hoveredFeature.id },
+                { hover: false }
+              );
+            }
+            hoveredFeature = { id: e.features[0].id, source: sourceId };
+            map.setFeatureState(
+              { source: sourceId, id: hoveredFeature.id },
+              { hover: true }
+            );
+            map.getCanvas().style.cursor = "pointer";
+          }
+        });
+
+        map.on("mouseleave", layerId, () => {
+          if (hoveredFeature && hoveredFeature.source === sourceId) {
+            map.setFeatureState(
+              { source: hoveredFeature.source, id: hoveredFeature.id },
+              { hover: false }
+            );
+            hoveredFeature = null;
+          }
+          map.getCanvas().style.cursor = "";
+        });
+      });
+    });
 
     map.on("click", (event) => {
       const { lng, lat } = event.lngLat;
-      // note: we are choosing to reverse the order here (aligns with backend/other convention)
       setSelectedCoords({ lat, lng });
-
       placeMarker(lng, lat);
     });
 
     return () => map.remove();
   }, []);
 
-  // side effect to handle user typing in coordinates
-  useEffect(() => {
-    const { lat, lng } = selectedCoords;
-  
-    if (!lat || !lng) return;
-    const latNum = Number(lat);
-    const lngNum = Number(lng);
-    if (isNaN(latNum) || isNaN(lngNum)) return;
-  
-    placeMarker(lngNum, latNum);
-  }, [selectedCoords]);
-
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       <Flex gap={2} direction={{ base: "column", md: "row" }}>
-        {/* Lat/Long input fields */}
-        <InputGroup startAddon="Latitude" flex={{ base: "1", md: "auto" }}>
+        <Group attached flex={{ base: "1", md: "2" }}>
+          <InputAddon>Latitude</InputAddon>
           <Input
-            placeholder="Type or click on the map!"
             type="number"
             value={selectedCoords.lat}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
-            }
+            onChange={(e) => setSelectedCoords(prev => ({ ...prev, lat: e.target.value }))}
           />
-        </InputGroup>
-        <InputGroup startAddon="Longitude" flex={{ base: "1", md: "auto" }}>
+        </Group>
+        <Group attached flex={{ base: "1", md: "2" }}>
+          <InputAddon>Longitude</InputAddon>
           <Input
-            placeholder="Type or click on the map!"
             type="number"
             value={selectedCoords.lng}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
-            }
+            onChange={(e) => setSelectedCoords(prev => ({ ...prev, lng: e.target.value }))}
           />
-        </InputGroup>
+        </Group>
 
         <Select.Root
           collection={overlays}
-          flex={{ base: "1", md: "auto" }}
-          defaultValue="county"
+          flex={{ base: "1", md: "1" }}
+          defaultValue={["county"]}
+          onValueChange={handleLayerChange}
         >
           <Select.HiddenSelect />
           <Select.Control>
@@ -137,20 +195,8 @@ const InteractiveMap = ({
 
       </Flex>
 
-      {/* MAP BOX (replaces your placeholder) */}
-      <Box
-        flex="1"
-        borderWidth="2px"
-        borderRadius="md"
-        bg="gray.100"
-        overflow="hidden"
-      >
-        {/* This is the actual map container */}
-        <Box
-          ref={mapContainerRef}
-          id="map"
-          style={{ width: "100%", height: "100%" }}
-        />
+      <Box flex="1" borderWidth="2px" borderRadius="md" bg="gray.100" overflow="hidden">
+        <Box ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
       </Box>
     </Flex>
   );

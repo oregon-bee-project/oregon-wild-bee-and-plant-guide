@@ -2,86 +2,99 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 
-# WINTER IMPROVMENTS: remove this API/dependency
-from geopy.geocoders import Nominatim
-from geopy.exc import (
-    GeocoderTimedOut,
-    GeocoderServiceError,
-    GeocoderUnavailable,
-    GeocoderQueryError,
-    GeocoderQuotaExceeded,
-)
+import geopandas as gpd
+from shapely.geometry import Point
 
-# Seraches internet to find matching County depending on Lat and Long
-def get_county_from_coordinates(latitude, longitude):
-    # WINTER IMPROVEMENTS: uses passed in df rather than an API call
-    geolocator = Nominatim(user_agent="bee-data")
+shape_files = {"county": "../frontend/public/GeoJSON/county.json",
+               "ecoregion": "../frontend/public/GeoJSON/ecoregion.json",
+               "refuge": "../frontend/public/GeoJSON/refuges.json",
+               "national-forest": "../frontend/public/GeoJSON/national-forest.json",
+               "park": "../frontend/public/GeoJSON/parks.json"}
 
-    try:
-        location = geolocator.reverse((latitude, longitude), timeout=5)
-    except (
-        GeocoderTimedOut,
-        GeocoderServiceError,
-        GeocoderUnavailable,
-        GeocoderQueryError,
-        GeocoderQuotaExceeded):
-        print("ERROR - geolocator.reverse()")
+sf_key = {"county": "COUNTY_FIP",
+          "ecoregion": "US_L3CODE",
+          "refuge": "FWSREGION", # not correct, dummy value
+          "national-forest": "FORESTNUMB", 
+          "park": "OBJECTID"} #not correct, dummy value
+
+sf_name = {"county": "NAME",
+           "ecoregion": "US_L3NAME",
+           "refuge": "ORGNAME",
+           "national-forest": "FORESTNAME",
+           "park": "FULL_NAME"}
+
+df_columns = {"county": "USA Counties",
+              "ecoregion": "US Ecoregions Level IV",
+              "refuge": "National Wildlife Refuge Boundaries",
+              "national-forest": "Forest Service National Forest Boundaries",
+              "park": "Oregon State Parks"}
+
+# Cache for loaded GeoDataFrames to prevent re-reading from disk/URL
+region_cache = {}
+
+# Searches shape file to find matching County depending on Lat and Long
+def get_region_from_coordinates(latitude, longitude, region_type):
+    if region_type not in region_cache:
+        regions = gpd.read_file(shape_files[region_type])
+        # Ensure the shapefile is in the correct CRS (Latitude/Longitude)
+        if regions.crs is not None:
+            regions = regions.to_crs(epsg=4326)
+        region_cache[region_type] = regions
+    
+    regions = region_cache[region_type]
+
+    target_point = Point(longitude, latitude)
+    containing_region = regions[regions.contains(target_point)]
+
+    if not containing_region.empty:
+        return (containing_region[sf_name[region_type]].values[0], int(containing_region[sf_key[region_type]].values[0]))
+    else:
         return None
-    except Exception:
-        # Fallback for any unexpected geopy/network errors
-        print("ERROR - geolocator.reverse()")
-        return None
-    
-    if location and location.raw and 'address' in location.raw:
-        address = location.raw['address']
-        county = address.get('county') or address.get('state_district') or address.get('suburb')
-        return county
-    
-    return None
 
-# Updates the response_json with the correct county name
-def set_county(response, lat, long):
+# Updates the response_json with the correct region name and code (which corresponds to the df)
+def set_region_name(response):
     
     try:
-        lat, long = float(lat), float(long)
+        lat, long = float(response['lat']), float(response['long'])
     except:
         response["error"] = True
         response["err_msg"] = "Latitude and Longitude cannot be converted to float"
         return
     
-    county_name = get_county_from_coordinates(lat, long)
+    region_tuple = get_region_from_coordinates(lat, long, response['region_type'])
     
     # Return if an error is given
-    if county_name is None:
+    if region_tuple is None:
         response["error"] = True
-        response["err_msg"] = "County not found using Geopy Nominatim"
+        response["err_msg"] = "Region not found using provided Shape Files"
         return
         
-    county_name = county_name.replace(" County", "")
-    print(f"county name: {county_name}")
-    response["county"] = county_name
+    print(f"region name, region key: {region_tuple}")
+    response["region_name"], response["region_key"] = region_tuple
     
     return
 
-# WINTER IMPROVEMENTS: add functions like set_county() that set the name of other spatial boundaries that can be found in data
-
-# creates a dataframe using the county name and the excel sheet, then passes it into the response_json
+# creates a dataframe using the region key and the df, then passes it into the response_json
 def filter_df(response, df):
 
-    # WINTER IMPROVEMENTS: Add options to filter by different categories, not just county
-    
+    col_name = df_columns[response["region_type"]]
+
     # filter out rows that do not contain the county name
-    df_filtered = df[df['county'].str.contains(response["county"], case = False, na = False, regex = False)]
+    df_filtered = df[df[col_name] == response["region_key"]]
     df_filtered = df_filtered.replace({np.nan: None})
+
+    if df_filtered.empty and response["region_type"] == "county":
+        county_name = response["region_name"].replace("County", "").strip()
+
+        df_filtered = df[df["county"].str.contains(county_name, case=False, regex=True, na=False)]
+        df_filtered = df_filtered.replace({np.nan: None})
     
     response["response"] = df_filtered.to_dict(orient="records")
     
     return
 
-# 
+
 def summary_stats(response, inat_key):
-    # WINTER IMPROVEMENTS: mostCommonBee and mostCommonPlant should be arrays to store a list of most common
-    # WINTER IMPROVEMENTS: mostCommonInteraction should be a new entry that is a list of most common interactions
     stats = {
         "numRows": 0,
         "numUniqueBees": 0,
