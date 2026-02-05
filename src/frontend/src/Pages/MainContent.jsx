@@ -11,6 +11,7 @@ import ErrorDialog from "../CustomComponents/ErrorDialog";
 const MainContent = () => {
     const [activePage, setActivePage] = useState("prompts-map")
     const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
+    const [selectedRegion, setSelectedRegion] = useState("");
 	const [locationData, setLocationData] = useState(null);
     const [activePrompt, setActivePrompt] = useState(null);
     const [errorDialogMsg, setErrorDialogMsg] = useState("");
@@ -18,7 +19,7 @@ const MainContent = () => {
 
 	const API_BASE = import.meta.env.PROD
 		? "https://bee-data-api.onrender.com"		// this is what the url prefix will be in production
-		: "";																		// this is what the url prefix will be in dev
+		: "";										// this is what the url prefix will be in dev
 
 	const fetchLocationData = async () => {
 
@@ -33,9 +34,15 @@ const MainContent = () => {
             return;
         }
 
+        if (selectedRegion == "") {
+            setErrorDialogMsg("Please set a value for region.");
+            return;
+        }
+
 		const params = new URLSearchParams({
 			lat: selectedCoords.lat,
 			long: selectedCoords.lng,
+            region_type: selectedRegion.toLowerCase()
 		});
 
 		try {
@@ -51,7 +58,7 @@ const MainContent = () => {
             setActivePage("data-display");
 		} catch (err) {
 			console.error(err.message);
-            if (err.message == "County not found using Geopy Nominatim") {
+            if (err.message == "Region not found using provided Shape Files") {
                 setErrorDialogMsg(`Unable to fetch data for the selected
                     coordinates. Please pick a different location on the map.`);
             }
@@ -134,6 +141,7 @@ const MainContent = () => {
                         selectedCoords={selectedCoords}
                         setSelectedCoords={setSelectedCoords}
                         setErrorDialogMsg={setErrorDialogMsg}
+                        setSelectedRegion={setSelectedRegion}
                     />
                 </>
             ) : (
