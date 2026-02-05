@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Flex, Input, InputGroup, Button } from "@chakra-ui/react";
-import { LuLocateFixed } from "react-icons/lu";
+import { Box, Flex, Input, InputGroup, Button, Portal, Select, createListCollection } from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+
+const overlays = createListCollection({
+  items: [
+    { label: "County", value: "county" },
+    { label: "Ecoregion", value: "ecoregion" },
+    { label: "National Forest", value: "national-forest" },
+  ],
+})
 
 const InteractiveMap = ({ 
   selectedCoords, 
@@ -99,6 +106,35 @@ const InteractiveMap = ({
             }
           />
         </InputGroup>
+
+        <Select.Root
+          collection={overlays}
+          flex={{ base: "1", md: "auto" }}
+          defaultValue="county"
+        >
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger>
+              <Select.ValueText placeholder="Select overlay" />
+            </Select.Trigger>
+            <Select.IndicatorGroup>
+              <Select.Indicator />
+            </Select.IndicatorGroup>
+          </Select.Control>
+          <Portal>
+            <Select.Positioner>
+              <Select.Content>
+                {overlays.items.map((overlays) => (
+                  <Select.Item item={overlays} key={overlays.value}>
+                    {overlays.label}
+                    <Select.ItemIndicator />
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Portal>
+        </Select.Root>
+
       </Flex>
 
       {/* MAP BOX (replaces your placeholder) */}

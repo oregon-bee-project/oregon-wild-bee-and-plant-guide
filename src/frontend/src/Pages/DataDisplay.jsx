@@ -1,8 +1,14 @@
 import { Box, Flex, Button, Heading, Text, Stack } from "@chakra-ui/react";
-import { LuFileUp } from "react-icons/lu";
+import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
-const DataDisplay = ({ locationData, selectedCoords }) => {
+const DataDisplay = ({ 
+    locationData,
+    selectedCoords,
+    setActivePage,
+    setActivePrompt,
+    setSelectedCoords
+}) => {
   // On click of export, send post request to backend to generate CSV
   // Render API base
   const API_BASE = import.meta.env.PROD
@@ -55,6 +61,18 @@ const DataDisplay = ({ locationData, selectedCoords }) => {
         {locationData && <BeeStatsPanel data={locationData} />}
       </Box>
       <Flex gap="8px">
+        <Button
+          flex="1"
+          bg="green.600"
+          _hover={{ bg: "green.500" }}
+          onClick={() => {
+            setActivePage("prompts-map");
+            setActivePrompt(null);
+            setSelectedCoords({ lat: "", lng: "" });
+        }}
+        >
+          <LuRefreshCcw /> Try a New Prompt
+        </Button>
         <Button
           flex="1"
           bg="blue.600"

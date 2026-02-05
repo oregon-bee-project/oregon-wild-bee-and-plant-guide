@@ -4,18 +4,20 @@ import {
   Image,
   Text,
   Link,
-  Stack
+  Stack,
+  Button
 } from '@chakra-ui/react';
 import OSULogo from "@/assets/OSU-logo.png"
 import '@/index.css'
+import InfoDialog from './InfoDialog';
 
 const OSUHeader = () => {
   return (
     <Box
       as="header"
       width="100%"
-      minH={{ base: "144px", md: "144px" }}
-      maxH={{ base: "144px", md: "144px" }}
+      minH={{ base: "200px", md: "144px" }}
+      maxH={{ base: "200px", md: "144px" }}
       display="flex"
       flexDirection="column"
       bg="#000000"
@@ -102,6 +104,13 @@ const OSUHeader = () => {
               </Text>
             </Link>
           </Stack>
+        </Box>
+        <Box 
+          ml={{ base: "0", md: "auto" }} 
+          mr={{ base: "0", md: "50px" }}
+          mt={{ base: "10px", md: "0" }}
+        >
+          <InfoDialog />
         </Box>
       </Flex>
     </Box>

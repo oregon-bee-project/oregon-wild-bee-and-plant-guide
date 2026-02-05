@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Flex, Tabs, Button, useDisclosure, Drawer } from "@chakra-ui/react";
-import { LuChartColumn, LuMap, LuMenu } from "react-icons/lu";
+import { Flex, Button, useDisclosure, Drawer, Text } from "@chakra-ui/react";
+import { LuMenu, LuCheck } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
@@ -9,7 +9,7 @@ import ErrorDialog from "../CustomComponents/ErrorDialog";
 // This is the main webpage content - everything below the header
 
 const MainContent = () => {
-    const [currentTab, setCurrentTab] = useState("map");
+    const [activePage, setActivePage] = useState("prompts-map")
     const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 	const [locationData, setLocationData] = useState(null);
     const [activePrompt, setActivePrompt] = useState(null);
@@ -48,7 +48,7 @@ const MainContent = () => {
         
             const json = await res.json();
             setLocationData(json);
-            setCurrentTab("datadisplay");
+            setActivePage("data-display");
 		} catch (err) {
 			console.error(err.message);
             if (err.message == "County not found using Geopy Nominatim") {
@@ -69,77 +69,82 @@ const MainContent = () => {
         }
 
         <Flex h="100%" p={{ base: "5px", md: "10px" }} gap={{ base: "10px", md: "30px" }} direction={{ base: "column", md: "row" }}>
-            {/* Mobile hamburger menu button - only visible on mobile */}
-            <Button
-                aria-label="Open sidebar"
-                display={{ base: "flex", md: "none" }}
-                onClick={onOpen}
-                width="100%"
-            >
-                <LuMenu /> Show Prompts
-            </Button>
+            {activePage == "prompts-map" ? (
+                <>
+                    {/* Mobile hamburger menu button - only visible on mobile */}
+                    <Button
+                        variant="outline"
+                        borderColor="black"
+                        display={{ base: "flex", md: "none" }}
+                        onClick={onOpen}
+                        width="100%"
+                    >
+                        {activePrompt ? (
+                            <Flex align="center" gap={2}>
+                                <LuCheck />
+                                <Text>Prompt Selected</Text>
+                            </Flex>
+                        ) : (
+                            <Flex align="center" gap={2}>
+                                <LuMenu />
+                                <Text>Show Prompts</Text>
+                            </Flex>
+                        )}
+                    </Button>
 
-            {/* Desktop sidebar - hidden on mobile */}
-            <PromptSidebar
-                display={{ base: "none", md: "flex" }}
-                activePrompt={activePrompt}
-                setActivePrompt={setActivePrompt}
-                fetchLocationData={fetchLocationData}
-            />
+                    {/* Desktop sidebar - hidden on mobile */}
+                    <PromptSidebar
+                        display={{ base: "none", md: "flex" }} // hidden on mobile
+                        activePrompt={activePrompt}
+                        setActivePrompt={setActivePrompt}
+                        fetchLocationData={fetchLocationData}
+                        showButton={true}
+                    />
 
-            {/* Mobile drawer for sidebar */}
-            <Drawer.Root
-                open={open}
-                onOpenChange={(e) => {
-                    if (!e.open) onClose();
-                }}
-                placement="top"
-            >
-                <Drawer.Backdrop />
-                <Drawer.Content rounded="md">
-                    <Drawer.Body>
-                        <PromptSidebar
-                            activePrompt={activePrompt}
-                            setActivePrompt={setActivePrompt}
-                            fetchLocationData={fetchLocationData}
-                            onPromptSelect={onClose}
-                        />
-                    </Drawer.Body>
-                </Drawer.Content>
-            </Drawer.Root>
+                    {/* Mobile drawer for sidebar */}
+                    <Drawer.Root
+                        open={open}
+                        onOpenChange={(e) => {
+                            if (!e.open) onClose();
+                        }}
+                        placement="top"
+                    >
+                        <Drawer.Backdrop />
+                        <Drawer.Content rounded="md">
+                            <Drawer.Body>
+                                <PromptSidebar
+                                    activePrompt={activePrompt}
+                                    setActivePrompt={setActivePrompt}
+                                    fetchLocationData={fetchLocationData}
+                                    onPromptSelect={onClose}
+                                    showButton={false}
+                                />
+                                <Button
+                                    mt="2"
+                                    w="100%"
+                                    onClick={onClose}
+                                >
+                                    Done
+                                </Button>
+                            </Drawer.Body>
+                        </Drawer.Content>
+                    </Drawer.Root>
 
-            {/* Main content area */}
-            <Tabs.Root
-                value={currentTab}
-                onValueChange={(e) => setCurrentTab(e.value)}
-                flex="1"
-                display="flex"
-                flexDirection="column"
-                minH="0"
-            >
-                <Tabs.List>
-                    <Tabs.Trigger value="map">
-                        <LuMap /> Map
-                    </Tabs.Trigger>
-                    <Tabs.Trigger value="datadisplay">
-                        <LuChartColumn /> Data Display
-                    </Tabs.Trigger>
-                </Tabs.List>
-                <Tabs.Content value="map" flex="1" display="flex" minH="0px">
                     <InteractiveMap
                         selectedCoords={selectedCoords}
                         setSelectedCoords={setSelectedCoords}
                         setErrorDialogMsg={setErrorDialogMsg}
                     />
-                </Tabs.Content>
-                <Tabs.Content value="datadisplay" flex="1" display="flex" minH="0px">
-                    <DataDisplay
-                        locationData={locationData}
-                        selectedCoords={selectedCoords}
-                    />
-                </Tabs.Content>
-            </Tabs.Root>
-
+                </>
+            ) : (
+                <DataDisplay
+                    locationData={locationData}
+                    selectedCoords={selectedCoords}
+                    setActivePage={setActivePage}
+                    setActivePrompt={setActivePrompt}
+                    setSelectedCoords={setSelectedCoords}
+                />
+            )}
         </Flex>
     </>
   );
