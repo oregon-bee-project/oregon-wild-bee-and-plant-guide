@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
-import model.run_model as rm
 import parse_viz as pv
 import flatten_summary as fs
 from create_pdf import generate_pdf_from_rows as g_pdf
 import io
 import csv
+from fastapi.responses import StreamingResponse
+
 
 app = FastAPI()
 

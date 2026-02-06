@@ -32,7 +32,7 @@ const DataDisplay = ({
       console.log(selectedRegion);
 
       if (!response.ok) {
-        throw new Error("Failed to export CSV");
+        throw new Error("Failed to export PDF");
       }
 
       const blob = await response.blob();
