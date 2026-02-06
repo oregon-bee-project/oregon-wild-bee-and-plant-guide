@@ -2,12 +2,13 @@ import { Box, Flex, Button, Heading, Text, Stack } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
-const DataDisplay = ({ 
-    locationData,
-    selectedCoords,
-    setActivePage,
-    setActivePrompt,
-    setSelectedCoords
+const DataDisplay = ({
+  locationData,
+  selectedCoords,
+  selectedRegion,
+  setActivePage,
+  setActivePrompt,
+  setSelectedCoords,
 }) => {
   // On click of export, send post request to backend to generate CSV
   // Render API base
@@ -18,15 +19,17 @@ const DataDisplay = ({
     if (!locationData) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/export-csv`, {
+      const response = await fetch(`${API_BASE}/api/export-pdf`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           selectedCoords,
+          region_type: selectedRegion,
         }),
       });
+      console.log(selectedRegion);
 
       if (!response.ok) {
         throw new Error("Failed to export CSV");
@@ -37,7 +40,7 @@ const DataDisplay = ({
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = "export.csv"; // filename
+      link.download = "export.pdf"; // filename
       link.click();
 
       window.URL.revokeObjectURL(url);
@@ -69,7 +72,7 @@ const DataDisplay = ({
             setActivePage("prompts-map");
             setActivePrompt(null);
             setSelectedCoords({ lat: "", lng: "" });
-        }}
+          }}
         >
           <LuRefreshCcw /> Try a New Prompt
         </Button>

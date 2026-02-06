@@ -8,26 +8,31 @@ const prompts = [
     id: 1,
     title: "Common Bees",
     description: "What is the most common plant and bee in my area?",
+    state: "ready",
   },
   {
     id: 2,
     title: "Plants",
     description: "What plants should I grow to support bees in my area?",
+    state: "wip",
   },
   {
     id: 3,
     title: "Detailed Summary Report",
-    description: "Show me a detailed report of bee and plant species in my area"
-  }
+    description:
+      "Show me a detailed report of bee and plant species in my area",
+    state: "wip",
+  },
 ];
 
 const PromptSidebar = ({
-    display,
-    activePrompt,
-    setActivePrompt,
-    fetchLocationData,
-    onPromptSelect,
-    showButton = true
+  display,
+  activePrompt,
+  setActivePrompt,
+  fetchLocationData,
+  setErrorDialogMsg,
+  onPromptSelect,
+  showButton = true,
 }) => {
   return (
     <VStack spacing={0}>
@@ -50,7 +55,15 @@ const PromptSidebar = ({
               title={prompt.title}
               description={prompt.description}
               selected={activePrompt === prompt.id}
-              onClick={() => setActivePrompt(prompt.id)}
+              onClick={() => {
+                if (prompt.state === "wip") {
+                  setErrorDialogMsg(
+                    "This prompt is still under construction. Check back soon!",
+                  );
+                  return;
+                }
+                setActivePrompt(prompt.id);
+              }}
             />
           ))}
         </VStack>

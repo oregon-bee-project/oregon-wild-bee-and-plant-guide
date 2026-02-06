@@ -53,7 +53,6 @@ def get_region_from_coordinates(latitude, longitude, region_type):
 
 # Updates the response_json with the correct region name and code (which corresponds to the df)
 def set_region_name(response):
-    
     try:
         lat, long = float(response['lat']), float(response['long'])
     except:
@@ -82,6 +81,8 @@ def filter_df(response, df):
     # filter out rows that do not contain the county name
     df_filtered = df[df[col_name] == response["region_key"]]
     df_filtered = df_filtered.replace({np.nan: None})
+    #print("Filtered rows column headers:", list(df_filtered.columns))
+
 
     if df_filtered.empty and response["region_type"] == "county":
         county_name = response["region_name"].replace("County", "").strip()
@@ -95,6 +96,9 @@ def filter_df(response, df):
 
 
 def summary_stats(response, inat_key):
+    # Stats key
+    # numRows - All observations in filtered area
+    # numUniqueBees - 
     stats = {
         "numRows": 0,
         "numUniqueBees": 0,

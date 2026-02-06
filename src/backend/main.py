@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 import search_by_location as sl
 import parse_viz as pv
 import flatten_summary as fs
+from create_pdf import generate_pdf_from_rows as g_pdf
 import io
 import csv
 
@@ -68,7 +69,7 @@ def location_root(lat: float, long: float, region_type: str):
 
     return response_json
 
-# Export CSV endpoint - works for Prompt 1 "Common Bees"
+# Export CSV endpoint - Won't need once pdf is go to
 @app.post("/api/export-csv/")
 def export_csv(payload: dict):
     # Export works based off locationData structure
@@ -115,6 +116,54 @@ def export_csv(payload: dict):
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition"
+        }
+    )
+
+@app.post("/api/export-pdf/")
+def export_pdf(payload: dict):
+    selected = payload.get("selectedCoords")
+    if not selected:
+        raise HTTPException(status_code=400, detail="Missing selectedCoords in request.")
+
+    lat = selected.get("lat")
+    long = selected.get("lng")
+    if lat is None or long is None:
+        raise HTTPException(status_code=400, detail="Invalid coordinates provided.")
+
+    response_json = {
+        "response": [],
+        "region_type": payload.get("region_type"),
+        "lat": lat,
+        "long": long,
+        "error": False,
+        "err_msg": ""
+    }
+
+    # Run your pipeline
+    sl.set_region_name(response_json)
+    if response_json["error"]:
+        raise HTTPException(status_code=400, detail=response_json["err_msg"])
+
+    sl.filter_df(response_json, full_df)
+    sl.summary_stats(response_json, inat_key)
+
+    summary_stats = response_json.get("response", [])
+    rows = fs.flatten_summary(summary_stats)
+
+    if not rows:
+        raise HTTPException(status_code=404, detail="No data returned for selected location.")
+
+    # Generate PDF
+    pdf_buffer = g_pdf(rows, title="Bee Data Export")
+
+    filename = "beedata_export.pdf"
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename={filename}",
             "Access-Control-Expose-Headers": "Content-Disposition"
