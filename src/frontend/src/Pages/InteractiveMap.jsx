@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, Flex, Input, Group, InputAddon, Button, Portal, Select, createListCollection } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  Input,
+  Group,
+  InputAddon,
+  Button,
+  Portal,
+  Select,
+  createListCollection,
+} from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -9,17 +19,18 @@ const overlays = createListCollection({
     { label: "Ecoregion", value: "ecoregion", color: "Green" },
     { label: "National Forest", value: "national-forest", color: "Brown" },
   ],
-})
+});
 
 const InteractiveMap = ({
   selectedCoords,
   setSelectedCoords,
   setErrorDialogMsg,
-  setSelectedRegion
+  setSelectedRegion,
 }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const selectedFeatureRef = useRef(null);
 
   const handleLayerChange = (e) => {
     const selectedCategory = e.value[0];
@@ -52,7 +63,7 @@ const InteractiveMap = ({
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: "./custom-map-style.json",
-      center: [-120.55, 43.80],
+      center: [-120.55, 43.8],
       zoom: 6,
     });
 
@@ -84,6 +95,8 @@ const InteractiveMap = ({
             "fill-color": item.color,
             "fill-opacity": [
               "case",
+              ["boolean", ["feature-state", "selected"], false],
+              0.8,
               ["boolean", ["feature-state", "hover"], false],
               0.6,
               0,
@@ -110,13 +123,13 @@ const InteractiveMap = ({
             if (hoveredFeature) {
               map.setFeatureState(
                 { source: hoveredFeature.source, id: hoveredFeature.id },
-                { hover: false }
+                { hover: false },
               );
             }
             hoveredFeature = { id: e.features[0].id, source: sourceId };
             map.setFeatureState(
               { source: sourceId, id: hoveredFeature.id },
-              { hover: true }
+              { hover: true },
             );
             map.getCanvas().style.cursor = "pointer";
           }
@@ -126,19 +139,34 @@ const InteractiveMap = ({
           if (hoveredFeature && hoveredFeature.source === sourceId) {
             map.setFeatureState(
               { source: hoveredFeature.source, id: hoveredFeature.id },
-              { hover: false }
+              { hover: false },
             );
             hoveredFeature = null;
           }
           map.getCanvas().style.cursor = "";
         });
-      });
-    });
 
-    map.on("click", (event) => {
-      const { lng, lat } = event.lngLat;
-      setSelectedCoords({ lat, lng });
-      placeMarker(lng, lat);
+        map.on("click", layerId, (e) => {
+          if (!e.features.length) return;
+          const feature = e.features[0];
+          // Clear previous selection
+          if (selectedFeatureRef.current) {
+            map.setFeatureState(selectedFeatureRef.current, {
+              selected: false,
+            });
+          }
+          // Set new selection
+          selectedFeatureRef.current = {
+            source: sourceId,
+            id: feature.id,
+          };
+          map.setFeatureState(selectedFeatureRef.current, { selected: true });
+          // Update coords + marker
+          const { lng, lat } = e.lngLat;
+          setSelectedCoords({ lat, lng });
+          placeMarker(lng, lat);
+        });
+      });
     });
 
     return () => map.remove();
@@ -152,7 +180,9 @@ const InteractiveMap = ({
           <Input
             type="number"
             value={selectedCoords.lat}
-            onChange={(e) => setSelectedCoords(prev => ({ ...prev, lat: e.target.value }))}
+            onChange={(e) =>
+              setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
+            }
           />
         </Group>
         <Group attached flex={{ base: "1", md: "2" }}>
@@ -160,7 +190,9 @@ const InteractiveMap = ({
           <Input
             type="number"
             value={selectedCoords.lng}
-            onChange={(e) => setSelectedCoords(prev => ({ ...prev, lng: e.target.value }))}
+            onChange={(e) =>
+              setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
+            }
           />
         </Group>
 
@@ -192,10 +224,15 @@ const InteractiveMap = ({
             </Select.Positioner>
           </Portal>
         </Select.Root>
-
       </Flex>
 
-      <Box flex="1" borderWidth="2px" borderRadius="md" bg="gray.100" overflow="hidden">
+      <Box
+        flex="1"
+        borderWidth="2px"
+        borderRadius="md"
+        bg="gray.100"
+        overflow="hidden"
+      >
         <Box ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
       </Box>
     </Flex>
