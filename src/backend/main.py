@@ -69,6 +69,14 @@ def best_plants_root(lat: float, long: float): # is the root naming convention s
     # TODO: Finish implementing this
     bp.get_best_plants(response_json, lat, long)
     
+    # #region agent log
+    import json, os
+    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".cursor", "debug.log")
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    with open(log_path, "a") as f:
+        f.write(json.dumps({"id":"log_backend_response","timestamp":int(__import__("time").time()*1000),"location":"main.py:72","message":"Backend returning response_json","data":{"response":response_json.get("response"),"response_length":len(response_json.get("response",[])),"error":response_json.get("error"),"response_type":str(type(response_json.get("response")))},"runId":"run1","hypothesisId":"C"})+"\n")
+    # #endregion
+    
     return response_json
 
 @app.post("/api/export-pdf/")

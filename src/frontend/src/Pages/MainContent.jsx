@@ -75,13 +75,18 @@ const MainContent = () => {
         setActivePage("data-display");
       }
     } catch (err) {
-      console.error(err.message);
+      console.error("Error fetching location data:", err.message, err);
       if (err.message == "Region not found using provided Shape Files") {
         setErrorDialogMsg(`Unable to fetch data for the selected
                     coordinates. Please pick a different location on the map.`);
+      } else {
+        setErrorDialogMsg(err.message || "An error occurred while fetching data. Please try again.");
       }
     }
   };
+
+  // Determine which page to render
+  const isPromptsMapPage = activePage == "prompts-map";
 
   return (
     <>
@@ -98,7 +103,7 @@ const MainContent = () => {
         gap={{ base: "10px", md: "30px" }}
         direction={{ base: "column", md: "row" }}
       >
-        {activePage == "prompts-map" ? (
+        {isPromptsMapPage ? (
           <>
             {/* Mobile hamburger menu button - only visible on mobile */}
             <Button

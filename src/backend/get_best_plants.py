@@ -8,7 +8,7 @@ def get_best_plants(response: dict, lat: float, long: float) -> None:
     that is also based on the latitude and longitude of the user.
     """
     try:
-        predicted_interactions = pd.read_csv("./data/predicted_interactions.csv", index_col=0)
+        predicted_interactions = pd.read_csv("../data/predicted_interactions.csv", index_col=0)
 
         plant_scores = predicted_interactions.sum(axis=0)
 

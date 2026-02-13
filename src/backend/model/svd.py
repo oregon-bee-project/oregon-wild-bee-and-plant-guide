@@ -93,21 +93,20 @@ def save_to_csv(predicted_matrix):
 
 if __name__ == "__main__":
   interaction_matrix = gen_interaction()
-  print(interaction_matrix.head())
-  print(interaction_matrix.columns)
-  # # number of features/niches (tested and this is the best option)
-  # k = 50
-  # var_ratio, predictions = run_svd(interaction_matrix, k)
-  # print_log(interaction_matrix, var_ratio, predictions)
-  # save_to_csv(predictions)
+  
+  # number of features/niches (tested and this is the best option)
+  k = 50
+  var_ratio, predictions = run_svd(interaction_matrix, k)
+  print_log(interaction_matrix, var_ratio, predictions)
+  save_to_csv(predictions)
 
-  # # Evaluate model
-  # train_df, test_indices = get_train_test_split(interaction_matrix)
-  # print(f"Masked {len(test_indices)} interactions for testing.")
+  # Evaluate model
+  train_df, test_indices = get_train_test_split(interaction_matrix)
+  print(f"Masked {len(test_indices)} interactions for testing.")
 
-  # rmse, r2 = evaluate_model(interaction_matrix, predictions, test_indices)
-  # print("------------------------------------------------")
-  # print(f"Validation Results (k={k}):")
-  # print(f"RMSE: {rmse:.4f}")
-  # print(f"r2_score: {r2:.4f}")
+  rmse, r2 = evaluate_model(interaction_matrix, predictions, test_indices)
+  print("------------------------------------------------")
+  print(f"Validation Results (k={k}):")
+  print(f"RMSE: {rmse:.4f}")
+  print(f"r2_score: {r2:.4f}")
 

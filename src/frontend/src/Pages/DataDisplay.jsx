@@ -50,6 +50,9 @@ const DataDisplay = ({
     }
   };
 
+  // Determine which branch to render
+  const shouldRenderPlants = locationData && activePrompt === 2;
+
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       {/* data display area */}
@@ -62,26 +65,30 @@ const DataDisplay = ({
         p={2}
         overflowY="auto"
       >
-        {locationData && activePrompt === 2 ? (
+        {shouldRenderPlants ? (
           <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
             <VStack align="stretch" spacing={4}>
               <Heading size="lg" textAlign="center">
                 Best plants to support bees in your area
               </Heading>
-              {locationData.response?.length > 0 && (
-                <Box>
-                  <Text fontWeight="bold" mb={2}>
-                    Top 5 plants:
-                  </Text>
-                  <List as="ol" listStyleType="decimal" pl={4} spacing={1}>
+              <Box>
+                <Text fontWeight="bold" mb={2}>
+                  Top 5 plants:
+                </Text>
+                {Array.isArray(locationData.response) && locationData.response.length > 0 ? (
+                  <List.Root as="ol" listStyleType="decimal" pl={4} spacing={1}>
                     {locationData.response.map((plant, idx) => (
-                      <ListItem key={idx} fontStyle="italic">
+                      <List.Item key={idx} fontStyle="italic">
                         {plant}
-                      </ListItem>
+                      </List.Item>
                     ))}
-                  </List>
-                </Box>
-              )}
+                  </List.Root>
+                ) : (
+                  <Text color="gray.600" fontStyle="italic">
+                    No plants found. Please try selecting a different location.
+                  </Text>
+                )}
+              </Box>
               <Box>
                 <Text fontWeight="bold" mb={2}>
                   JSON response:
