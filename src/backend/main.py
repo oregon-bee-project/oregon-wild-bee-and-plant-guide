@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
+import get_best_plants as bp
 import parse_viz as pv
 import flatten_summary as fs
 from create_pdf import generate_pdf_from_rows as g_pdf
@@ -59,14 +60,14 @@ def location_root(lat: float, long: float, region_type: str):
     return response_json
 
 @app.get("/api/best-plants-to-plant/")
-def run_model_root(lat: float, long: float): # is the root naming convention standard
+def best_plants_root(lat: float, long: float): # is the root naming convention standard
     response_json = {
         "response": [],
         "error": False,
         "err_msg" : ""
     }
     # TODO: Finish implementing this
-    rm.get_best_plants(response_json, lat, long)
+    bp.get_best_plants(response_json, lat, long)
     
     return response_json
 

@@ -33,30 +33,47 @@ const MainContent = () => {
       return;
     }
 
-    if (selectedRegion == "") {
+    if (activePrompt === 1 && selectedRegion == "") {
       setErrorDialogMsg("Please set a value for region.");
       return;
     }
 
-    const params = new URLSearchParams({
-      lat: selectedCoords.lat,
-      long: selectedCoords.lng,
-      region_type: selectedRegion.toLowerCase(),
-    });
-
     try {
-      const res = await fetch(
-        `${API_BASE}/api/location-data/?${params.toString()}`,
-      );
-
-      if (!res.ok) {
-        const errorJson = await res.json();
-        throw new Error(errorJson.detail);
+      if (activePrompt === 1) {
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: selectedRegion.toLowerCase(),
+        });
+        const res = await fetch(
+          `${API_BASE}/api/location-data/?${params.toString()}`,
+        );
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail);
+        }
+        const json = await res.json();
+        setLocationData(json);
+        setActivePage("data-display");
+      } else if (activePrompt === 2) {
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+        });
+        const res = await fetch(
+          `${API_BASE}/api/best-plants-to-plant/?${params.toString()}`,
+        );
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail ?? errorJson.err_msg ?? "Request failed");
+        }
+        const json = await res.json();
+        if (json.error) {
+          throw new Error(json.err_msg || "Error fetching best plants");
+        }
+        setLocationData(json);
+        setActivePage("data-display");
       }
-
-      const json = await res.json();
-      setLocationData(json);
-      setActivePage("data-display");
     } catch (err) {
       console.error(err.message);
       if (err.message == "Region not found using provided Shape Files") {
@@ -149,6 +166,7 @@ const MainContent = () => {
         ) : (
           <DataDisplay
             locationData={locationData}
+            activePrompt={activePrompt}
             selectedCoords={selectedCoords}
             setActivePage={setActivePage}
             setActivePrompt={setActivePrompt}

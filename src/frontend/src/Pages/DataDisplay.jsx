@@ -1,9 +1,10 @@
-import { Box, Flex, Button, Heading, Text, Stack } from "@chakra-ui/react";
+import { Box, Flex, Button, Heading, Text, VStack, List, ListItem } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
 const DataDisplay = ({
   locationData,
+  activePrompt,
   selectedCoords,
   selectedRegion,
   setActivePage,
@@ -61,7 +62,48 @@ const DataDisplay = ({
         p={2}
         overflowY="auto"
       >
-        {locationData && <BeeStatsPanel data={locationData} />}
+        {locationData && activePrompt === 2 ? (
+          <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
+            <VStack align="stretch" spacing={4}>
+              <Heading size="lg" textAlign="center">
+                Best plants to support bees in your area
+              </Heading>
+              {locationData.response?.length > 0 && (
+                <Box>
+                  <Text fontWeight="bold" mb={2}>
+                    Top 5 plants:
+                  </Text>
+                  <List as="ol" listStyleType="decimal" pl={4} spacing={1}>
+                    {locationData.response.map((plant, idx) => (
+                      <ListItem key={idx} fontStyle="italic">
+                        {plant}
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              )}
+              <Box>
+                <Text fontWeight="bold" mb={2}>
+                  JSON response:
+                </Text>
+                <Box
+                  as="pre"
+                  p={4}
+                  bg="gray.50"
+                  borderRadius="md"
+                  fontSize="sm"
+                  fontFamily="mono"
+                  overflowX="auto"
+                  whiteSpace="pre-wrap"
+                >
+                  {JSON.stringify(locationData, null, 2)}
+                </Box>
+              </Box>
+            </VStack>
+          </Box>
+        ) : (
+          <BeeStatsPanel data={locationData} />
+        )}
       </Box>
       <Flex gap="8px">
         <Button
@@ -76,14 +118,16 @@ const DataDisplay = ({
         >
           <LuRefreshCcw /> Try a New Prompt
         </Button>
-        <Button
-          flex="1"
-          bg="blue.600"
-          _hover={{ bg: "blue.500" }}
-          onClick={handleExport}
-        >
-          <LuFileUp /> Export Results
-        </Button>
+        {activePrompt === 1 && (
+          <Button
+            flex="1"
+            bg="blue.600"
+            _hover={{ bg: "blue.500" }}
+            onClick={handleExport}
+          >
+            <LuFileUp /> Export Results
+          </Button>
+        )}
       </Flex>
     </Flex>
   );
