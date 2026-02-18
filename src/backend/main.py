@@ -84,10 +84,12 @@ def export_pdf(payload: dict):
     response_json = {
         "response": [],
         "region_type": payload.get("region_type"),
+        "region_name": "",
+        "region_key": "",
         "lat": lat,
         "long": long,
         "error": False,
-        "err_msg": ""
+        "err_msg" : ""
     }
 
     # Run your pipeline
@@ -105,9 +107,12 @@ def export_pdf(payload: dict):
         raise HTTPException(status_code=404, detail="No data returned for selected location.")
 
     # Generate PDF
-    pdf_buffer = g_pdf(rows, title="Bee Data Export")
+    title = "Common Bee and Plant Report"
+    location = response_json["region_name"]
+    pdf_buffer = g_pdf(rows, title=title, location=location)
 
-    filename = "beedata_export.pdf"
+    safe_location = location.replace(" ","_")
+    filename = f"{safe_location}_Common_Bee_Plant_Report.pdf"
 
     return StreamingResponse(
         pdf_buffer,
