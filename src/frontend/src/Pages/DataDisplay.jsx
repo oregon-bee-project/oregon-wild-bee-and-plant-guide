@@ -71,7 +71,7 @@ const DataDisplay = ({
           onClick={() => {
             setActivePage("prompts-map");
             setActivePrompt(null);
-            setSelectedCoords({ lat: "", lng: "" });
+            //setSelectedCoords({ lat: "", lng: "" });
           }}
         >
           <LuRefreshCcw /> Try a New Prompt
