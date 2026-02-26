@@ -60,23 +60,36 @@ def location_root(lat: float, long: float, region_type: str):
     return response_json
 
 @app.get("/api/best-plants-to-plant/")
-def best_plants_root(lat: float, long: float): # is the root naming convention standard
+def best_plants_root(lat: float, long: float, region_type: str = "county"):
     response_json = {
         "response": [],
         "error": False,
-        "err_msg" : ""
+        "err_msg": "",
+        "region_name": "",
+        "region_key": "",
+        "lat": lat,
+        "long": long,
     }
-    # TODO: Finish implementing this
+    # Resolve region name for display (same as location-data); do not fail request if not found
+    region_lookup = {"lat": lat, "long": long, "region_type": region_type, "error": False, "err_msg": ""}
+    sl.set_region_name(region_lookup)
+    if not region_lookup.get("error"):
+        response_json["region_name"] = region_lookup.get("region_name", "")
+        response_json["region_key"] = region_lookup.get("region_key", "")
     bp.get_best_plants(response_json, lat, long)
-    
-    # #region agent log
-    import json, os
-    log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".cursor", "debug.log")
-    os.makedirs(os.path.dirname(log_path), exist_ok=True)
-    with open(log_path, "a") as f:
-        f.write(json.dumps({"id":"log_backend_response","timestamp":int(__import__("time").time()*1000),"location":"main.py:72","message":"Backend returning response_json","data":{"response":response_json.get("response"),"response_length":len(response_json.get("response",[])),"error":response_json.get("error"),"response_type":str(type(response_json.get("response")))},"runId":"run1","hypothesisId":"C"})+"\n")
-    # #endregion
-    
+    # Enrich list of plant IDs with display names and images from taxa lookup
+    ids = response_json.get("response") or []
+    if isinstance(ids, list) and ids:
+        enriched = []
+        for rank, plant_id in enumerate(ids[:5], start=1):
+            display = bp.lookup_plant_display(inat_key, plant_id)
+            enriched.append({
+                "rank": rank,
+                "commonName": display["commonName"],
+                "iNatTaxonName": display["iNatTaxonName"],
+                "iNatURL": display["iNatURL"],
+            })
+        response_json["response"] = enriched
     return response_json
 
 @app.post("/api/export-pdf/")

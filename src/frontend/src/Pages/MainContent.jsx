@@ -59,6 +59,7 @@ const MainContent = () => {
         const params = new URLSearchParams({
           lat: selectedCoords.lat,
           long: selectedCoords.lng,
+          region_type: (selectedRegion || "county").toLowerCase(),
         });
         const res = await fetch(
           `${API_BASE}/api/best-plants-to-plant/?${params.toString()}`,

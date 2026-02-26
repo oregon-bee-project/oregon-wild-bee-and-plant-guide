@@ -1,4 +1,4 @@
-import { Box, Flex, Button, Heading, Text, VStack, List, ListItem } from "@chakra-ui/react";
+import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
@@ -67,45 +67,58 @@ const DataDisplay = ({
       >
         {shouldRenderPlants ? (
           <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
-            <VStack align="stretch" spacing={4}>
+            <VStack spacing={{ base: 4, md: 6 }} align="stretch">
               <Heading size="lg" textAlign="center">
-                Best plants to support bees in your area
+                {locationData.region_name || "Best plants to support bees in your area"}
               </Heading>
-              <Box>
-                <Text fontWeight="bold" mb={2}>
-                  Top 5 plants:
+              <Text textAlign="center" fontSize="md" color="gray.600">
+                Top 5 plants to support bees in your area
+              </Text>
+              {Array.isArray(locationData.response) && locationData.response.length > 0 ? (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  {locationData.response.map((plant, idx) => {
+                    const rank = (plant?.rank != null ? plant.rank : idx + 1);
+                    const commonName = plant?.commonName ?? (typeof plant === "string" ? `Plant #${plant}` : "Unknown");
+                    const iNatTaxonName = plant?.iNatTaxonName ?? "";
+                    const iNatURL = plant?.iNatURL ?? "";
+                    return (
+                      <Box
+                        key={idx}
+                        p={{ base: 4, md: 5 }}
+                        borderRadius="2xl"
+                        boxShadow="md"
+                        bg="green.50"
+                      >
+                        <Heading size="sm" mb={2}>
+                          #{rank}
+                        </Heading>
+                        <Text fontSize="lg" fontWeight="bold">
+                          {commonName}
+                        </Text>
+                        {iNatTaxonName ? (
+                          <Text fontStyle="italic" color="gray.600">
+                            {iNatTaxonName}
+                          </Text>
+                        ) : null}
+                        {iNatURL ? (
+                          <Image
+                            src={iNatURL}
+                            alt={commonName}
+                            borderRadius="xl"
+                            mt={4}
+                            maxH="200px"
+                            objectFit="cover"
+                          />
+                        ) : null}
+                      </Box>
+                    );
+                  })}
+                </SimpleGrid>
+              ) : (
+                <Text color="gray.600" fontStyle="italic">
+                  No plants found. Please try selecting a different location.
                 </Text>
-                {Array.isArray(locationData.response) && locationData.response.length > 0 ? (
-                  <List.Root as="ol" listStyleType="decimal" pl={4} spacing={1}>
-                    {locationData.response.map((plant, idx) => (
-                      <List.Item key={idx} fontStyle="italic">
-                        {plant}
-                      </List.Item>
-                    ))}
-                  </List.Root>
-                ) : (
-                  <Text color="gray.600" fontStyle="italic">
-                    No plants found. Please try selecting a different location.
-                  </Text>
-                )}
-              </Box>
-              <Box>
-                <Text fontWeight="bold" mb={2}>
-                  JSON response:
-                </Text>
-                <Box
-                  as="pre"
-                  p={4}
-                  bg="gray.50"
-                  borderRadius="md"
-                  fontSize="sm"
-                  fontFamily="mono"
-                  overflowX="auto"
-                  whiteSpace="pre-wrap"
-                >
-                  {JSON.stringify(locationData, null, 2)}
-                </Box>
-              </Box>
+              )}
             </VStack>
           </Box>
         ) : (
