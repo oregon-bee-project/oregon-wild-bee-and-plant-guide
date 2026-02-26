@@ -218,27 +218,6 @@ const InteractiveMap = ({
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       <Flex gap={2} direction={{ base: "column", md: "row" }} align="center">
         <Text>I want to learn about bees and plants in the</Text>
-        {/* <Group attached flex={{ base: "1", md: "2" }}>
-          <InputAddon>Latitude</InputAddon>
-          <Input
-            type="number"
-            value={selectedCoords.lat}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
-            }
-          />
-        </Group>
-        <Group attached flex={{ base: "1", md: "2" }}>
-          <InputAddon>Longitude</InputAddon>
-          <Input
-            type="number"
-            value={selectedCoords.lng}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
-            }
-          />
-        </Group> */}
-
         <Select.Root
           minW={{base: "100%", md: "10%"}}
           maxW={{base: "100%", md: "15%"}}
