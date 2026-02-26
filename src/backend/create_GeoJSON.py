@@ -1,40 +1,60 @@
 import geopandas as gpd
 
-index = 2
+SHAPE_FILES = {
+    "county": "../data/shape-files/USA_Counties/USA_Counties.shp",
+    "ecoregion": "../data/shape-files/Level_IV_Ecoregions/US_Ecoregions_Level_IV.shp",
+    "national-forest": "../data/shape-files/NFS_Forest_Boundaries/Forest_Service_National_Forest_Boundaries.shp"
+}
 
-shape_files = ["../data/shape-files/USA_Counties/USA_Counties.shp",
-               "../data/shape-files/Level_IV_Ecoregions/US_Ecoregions_Level_IV.shp",
-               "../data/shape-files/National_Wildlife_Refuge_Boundaries/National_Wildlife_Refuge_Boundaries.shp",
-               "../data/shape-files/NFS_Forest_Boundaries/Forest_Service_National_Forest_Boundaries.shp",
-               "../data/shape-files/State_Park_Boundaries/Oregon_State_Parks.shp"]
+FRONTEND_PATHS = {
+    "county": "../frontend/public/GeoJSON/county.json",
+    "ecoregion": "../frontend/public/GeoJSON/l4_ecoregion.json",
+    "national-forest": "../frontend/public/GeoJSON/national-forest.json"
+}
 
-frontend_paths = ["../frontend/public/GeoJSON/counties.json",
-                 "../frontend/public/GeoJSON/ecoregions.json",
-                 "../frontend/public/GeoJSON/refuges.json",
-                 "../frontend/public/GeoJSON/forests.json",
-                 "../frontend/public/GeoJSON/parks.json"]
+REGIONTYPE_LIST = ["county", "ecoregion", "national-forest"]
 
-shape_file_path = shape_files[index]
-public_frontend_path = frontend_paths[index]
+def create_l3_ecoregion(gdf):
+    output_path = "../frontend/public/GeoJSON/ecoregion.json"
+    
+    # Columns to remove: L4 specific identifiers and shape stats
+    cols_to_drop = ['US_L4CODE', 'US_L4NAME', 'L4_KEY', 'Shape_Leng', 'Shape_Area']
+    
+    # Drop columns if they exist
+    gdf_l3 = gdf.drop(columns=[c for c in cols_to_drop if c in gdf.columns])
+    
+    # Dissolve by US_L3CODE
+    gdf_dissolved = gdf_l3.dissolve(by='US_L3CODE', as_index=False)
+    
+    gdf_dissolved.to_file(output_path, driver='GeoJSON')
 
-# Load your already-filtered Oregon counties
-oregon_boundary = gpd.read_file("../frontend/public/GeoJSON/counties.json")
+def createGeoJson ():
 
-# Load your shapefile
-gdf = gpd.read_file(shape_file_path)
+    for region_type in REGIONTYPE_LIST:
+        shape_file_path = SHAPE_FILES[region_type]
+        public_frontend_path = FRONTEND_PATHS[region_type]
 
-if gdf.crs != "EPSG:4326":
-    gdf = gdf.to_crs(epsg=4326)
+        # Load your shapefile
+        gdf = gpd.read_file(shape_file_path)
 
-# Filter for Oregon only 
-# Note: 'STATEFP' is standard for Census data; check your column names with gdf.columns
-# oregon_gdf = gdf[gdf['STATE_NAME'] == 'Oregon'].copy()
-# Keep only the features that intersect with Oregon
-oregon_gdf = gpd.sjoin(gdf, oregon_boundary, how="inner", predicate="intersects")
+        if gdf.crs != "EPSG:4326":
+            gdf = gdf.to_crs(epsg=4326)
 
-# Crucial: Ensure the projection is WGS84 (Lng/Lat) for MapLibre
-# if oregon_gdf.crs != "EPSG:4326":
-#     oregon_gdf = oregon_gdf.to_crs(epsg=4326)
+        if region_type in ["county", "ecoregion"]:
+            gdf = gdf[gdf["STATE_NAME"] == "Oregon"]
+        elif region_type == "national-forest":
+            gdf = gdf[gdf["REGION"] == "06"]
 
-# Export to your project's public directory
-oregon_gdf.to_file(public_frontend_path, driver='GeoJSON')
+        # # Keep only the features that intersect with Oregon
+        # oregon_gdf = gpd.sjoin(gdf, oregon_boundary, how="inner", predicate="intersects")
+
+        # Export to your project's public directory
+        gdf.to_file(public_frontend_path, driver='GeoJSON')
+
+        if region_type == "ecoregion":
+            create_l3_ecoregion(gdf)
+
+
+if __name__ == "__main__":
+    createGeoJson()
+    # use https://mapshaper.org/ to simplify for efficiency (15%)
