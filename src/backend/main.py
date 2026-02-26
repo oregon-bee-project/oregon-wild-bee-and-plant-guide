@@ -40,21 +40,18 @@ def location_root(lat: float, long: float, region_type: str):
         "response": [],
         "region_type": region_type,
         "region_name": "",
-        "region_key": "",
         "lat": lat,
         "long": long,
         "error": False,
         "err_msg" : ""
     }
     
-    sl.set_region_name(response_json)
-    
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
     
-    sl.summary_stats(response_json, inat_key)
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     return response_json
 
@@ -85,7 +82,6 @@ def export_pdf(payload: dict):
         "response": [],
         "region_type": payload.get("region_type"),
         "region_name": "",
-        "region_key": "",
         "lat": lat,
         "long": long,
         "error": False,
@@ -93,12 +89,14 @@ def export_pdf(payload: dict):
     }
 
     # Run your pipeline
-    sl.set_region_name(response_json)
+    
+
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
-    sl.summary_stats(response_json, inat_key)
+    
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     summary_stats = response_json.get("response", [])
     rows = fs.flatten_summary(summary_stats)
