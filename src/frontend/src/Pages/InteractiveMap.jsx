@@ -8,6 +8,7 @@ import {
   Button,
   Portal,
   Select,
+  Text,
   createListCollection,
 } from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
@@ -31,6 +32,7 @@ const InteractiveMap = ({
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const selectedFeatureRef = useRef(null);
+  const [address, setAddress] = useState("");
 
   const handleLayerChange = (e) => {
     const selectedCategory = e.value[0];
@@ -172,31 +174,53 @@ const InteractiveMap = ({
     return () => map.remove();
   }, []);
 
+  const geocodeAddress = async (address) => {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+    );
+
+    const data = await response.json();
+
+    if (data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+      };
+    } else {
+      throw new Error("No results found");
+    }
+  };
+
+  const handleSetAddress = async () => {
+    if (!address) return;
+
+    try {
+      const coords = await geocodeAddress(address);
+
+      setSelectedCoords(coords);
+
+      // Center map + place marker
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [coords.lng, coords.lat],
+          zoom: 14,
+        });
+      }
+
+      placeMarker(coords.lng, coords.lat);
+    } catch (err) {
+      setErrorDialogMsg("Address not found.");
+    }
+  };
+
+
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
-      <Flex gap={2} direction={{ base: "column", md: "row" }}>
-        <Group attached flex={{ base: "1", md: "2" }}>
-          <InputAddon>Latitude</InputAddon>
-          <Input
-            type="number"
-            value={selectedCoords.lat}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lat: e.target.value }))
-            }
-          />
-        </Group>
-        <Group attached flex={{ base: "1", md: "2" }}>
-          <InputAddon>Longitude</InputAddon>
-          <Input
-            type="number"
-            value={selectedCoords.lng}
-            onChange={(e) =>
-              setSelectedCoords((prev) => ({ ...prev, lng: e.target.value }))
-            }
-          />
-        </Group>
-
+      <Flex gap={2} direction={{ base: "column", md: "row" }} align="center">
+        <Text>I want to learn about bees and plants in the</Text>
         <Select.Root
+          minW={{base: "100%", md: "10%"}}
+          maxW={{base: "100%", md: "15%"}}
           collection={overlays}
           flex={{ base: "1", md: "1" }}
           defaultValue={["county"]}
@@ -224,6 +248,28 @@ const InteractiveMap = ({
             </Select.Positioner>
           </Portal>
         </Select.Root>
+        <Text>near this location:</Text>
+        <Group
+          attached
+          w="full"
+          minW={{base: "100%", md: "60%"}}
+          maxW={{base: "100%", md: "60%"}}
+        >
+          <Input
+            flex="1"
+            placeholder="Type an address, or click on the map"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+          <Button
+            variant="outline"
+            bg="bg.subtle"
+            _hover={{ bg: "green.100" }}
+            onClick={handleSetAddress}
+          >
+            Set Address
+          </Button>
+        </Group>
       </Flex>
 
       <Box

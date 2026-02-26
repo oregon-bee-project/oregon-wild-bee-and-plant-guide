@@ -5,6 +5,7 @@ import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
 import ErrorDialog from "../CustomComponents/ErrorDialog";
+import LoadingDialog from "../CustomComponents/LoadingDialog";
 
 // This is the main webpage content - everything below the header
 
@@ -15,6 +16,7 @@ const MainContent = () => {
   const [locationData, setLocationData] = useState(null);
   const [activePrompt, setActivePrompt] = useState(null);
   const [errorDialogMsg, setErrorDialogMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { open, onOpen, onClose } = useDisclosure();
 
   const API_BASE = import.meta.env.PROD
@@ -37,6 +39,9 @@ const MainContent = () => {
       setErrorDialogMsg("Please set a value for region.");
       return;
     }
+
+    // set loading state to true before making API call
+    setIsLoading(true);
 
     try {
       if (activePrompt === 1) {
@@ -83,6 +88,8 @@ const MainContent = () => {
       } else {
         setErrorDialogMsg(err.message || "An error occurred while fetching data. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -97,6 +104,8 @@ const MainContent = () => {
           onClose={() => setErrorDialogMsg("")}
         />
       )}
+
+      <LoadingDialog isOpen={isLoading} />
 
       <Flex
         h="100%"
