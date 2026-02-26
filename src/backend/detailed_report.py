@@ -7,7 +7,7 @@ import plotly.express as px
 import pandas as pd
 
 
-def everySpeciesList (response, inat_key):
+def everySpeciesList (response, inat_key, df):
     # Stats key
     # numRows - All observations in filtered area
     # numUniqueBees - 
@@ -24,7 +24,7 @@ def everySpeciesList (response, inat_key):
         "beeList": []
     }
 
-    rows = response.get("response") or []
+    rows = df.to_dict(orient="records") or []
     if not isinstance(rows, list):
         rows = []
 
@@ -43,9 +43,8 @@ def everySpeciesList (response, inat_key):
             return trimmed or None
         return str(value)
 
-    bee_counts = Counter()
     plant_counts = Counter()
-    bee_plant_interactions = {}
+    species_stats = {}
     
     male_count = 0
     female_count = 0
@@ -56,27 +55,62 @@ def everySpeciesList (response, inat_key):
         
         # Sex counts
         sex = normalize_string(row.get("sex"))
+        s_lower = None
         if sex:
             s_lower = sex.lower()
-            if s_lower == "male":
+            if s_lower == "male" or s_lower == "m":
                 male_count += 1
-            elif s_lower == "female":
+            elif s_lower == "female" or s_lower == "f":
                 female_count += 1
 
         # Plant counts
         plant_value = normalize_string(row.get("plantINatId"))
         
-        if bee_name:
-            bee_counts[bee_name] += 1
-            if plant_value:
-                if bee_name not in bee_plant_interactions:
-                    bee_plant_interactions[bee_name] = Counter()
-                bee_plant_interactions[bee_name][plant_value] += 1
-
         if plant_value:
             plant_counts[plant_value] += 1
 
-    stats["numUniqueBees"] = len(bee_counts)
+        if bee_name:
+            if bee_name not in species_stats:
+                species_stats[bee_name] = {
+                    "count": 0,
+                    "maleCount": 0,
+                    "femaleCount": 0,
+                    "winterCount": 0,
+                    "springCount": 0,
+                    "summerCount": 0,
+                    "fallCount": 0,
+                    "plant_interactions": Counter()
+                }
+            entry = species_stats[bee_name]
+            entry["count"] += 1
+
+            if s_lower:
+                if s_lower == "male" or s_lower == "m":
+                    entry["maleCount"] += 1
+                elif s_lower == "female" or s_lower == "f":
+                    entry["femaleCount"] += 1
+
+            if plant_value:
+                entry["plant_interactions"][plant_value] += 1
+
+            event_date = row.get("eventDate")
+            if event_date:
+                try:
+                    dt = pd.to_datetime(str(event_date), errors='coerce')
+                    if not pd.isna(dt):
+                        month = dt.month
+                        if month in [12, 1, 2]:
+                            entry["winterCount"] += 1
+                        elif month in [3, 4, 5]:
+                            entry["springCount"] += 1
+                        elif month in [6, 7, 8]:
+                            entry["summerCount"] += 1
+                        elif month in [9, 10, 11]:
+                            entry["fallCount"] += 1
+                except (ValueError, TypeError):
+                    pass
+
+    stats["numUniqueBees"] = len(species_stats)
     stats["numUniquePlants"] = len(plant_counts)
     stats["totalMales"] = male_count
     stats["totalFemales"] = female_count
@@ -95,37 +129,44 @@ def everySpeciesList (response, inat_key):
             inat_dict = {}
 
     # Build beeList
-    for bee, count in bee_counts.most_common():
+    sorted_species = sorted(species_stats.items(), key=lambda item: item[1]["count"], reverse=True)
+
+    for bee, entry in sorted_species:
         bee_obj = {
             "scientificName": bee,
-            "count": count,
+            "count": entry["count"],
+            "maleCount": entry["maleCount"],
+            "femaleCount": entry["femaleCount"],
+            "winterCount": entry["winterCount"],
+            "springCount": entry["springCount"],
+            "summerCount": entry["summerCount"],
+            "fallCount": entry["fallCount"],
             "topPlants": []
         }
         
-        if bee in bee_plant_interactions:
-            for plant_id, p_count in bee_plant_interactions[bee].most_common(5):
-                # Resolve plant info
-                common_name = ""
-                taxon_name = ""
-                image_url = ""
-                
-                try:
-                    p_id_int = int(float(plant_id))
-                    if p_id_int in inat_dict:
-                        info = inat_dict[p_id_int]
-                        common_name = normalize_string(info.get("commonName")) or ""
-                        taxon_name = normalize_string(info.get("scientificName")) or normalize_string(info.get("name")) or ""
-                        image_url = normalize_string(info.get("iNaturalistTaxonImage")) or ""
-                except (ValueError, TypeError):
-                    pass
-                
-                bee_obj["topPlants"].append({
-                    "plantINatId": plant_id,
-                    "commonName": common_name,
-                    "scientificName": taxon_name,
-                    "count": p_count,
-                    "image": image_url
-                })
+        for plant_id, p_count in entry["plant_interactions"].most_common(5):
+            # Resolve plant info
+            common_name = ""
+            taxon_name = ""
+            image_url = ""
+            
+            try:
+                p_id_int = int(float(plant_id))
+                if p_id_int in inat_dict:
+                    info = inat_dict[p_id_int]
+                    common_name = normalize_string(info.get("commonName")) or ""
+                    taxon_name = normalize_string(info.get("scientificName")) or normalize_string(info.get("name")) or ""
+                    image_url = normalize_string(info.get("iNaturalistTaxonImage")) or ""
+            except (ValueError, TypeError):
+                pass
+            
+            bee_obj["topPlants"].append({
+                "plantINatId": plant_id,
+                "commonName": common_name,
+                "scientificName": taxon_name,
+                "count": p_count,
+                "image": image_url
+            })
         
         stats["beeList"].append(bee_obj)
 

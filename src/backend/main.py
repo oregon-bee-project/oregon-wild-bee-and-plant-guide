@@ -7,7 +7,7 @@ from create_pdf import generate_pdf_from_rows as g_pdf
 import io
 import csv
 from fastapi.responses import StreamingResponse
-
+import detailed_report as dr
 
 app = FastAPI()
 
@@ -52,6 +52,29 @@ def location_root(lat: float, long: float, region_type: str):
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
     
     sl.summary_stats(response_json, inat_key, filtered_df)
+
+    return response_json
+
+@app.get("/api/detailed-report/")
+def detailed_report_root(lat: float, long: float, region_type: str):
+    response_json = {
+        "response": [],
+        "region_type": region_type,
+        "region_name": "",
+        "lat": lat,
+        "long": long,
+        "error": False,
+        "err_msg" : ""
+    }
+
+    filtered_df = sl.filter_df(response_json, full_df)
+
+    if response_json["error"]:
+        raise HTTPException(status_code=400, detail=response_json["err_msg"])
+
+    dr.everySpeciesList(response_json, inat_key, filtered_df)
+
+    dr.heatmap(filtered_df)
 
     return response_json
 
