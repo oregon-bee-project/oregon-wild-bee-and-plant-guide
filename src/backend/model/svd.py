@@ -93,6 +93,7 @@ def save_to_csv(predicted_matrix):
 
 if __name__ == "__main__":
   interaction_matrix = gen_interaction()
+  
   # number of features/niches (tested and this is the best option)
   k = 50
   var_ratio, predictions = run_svd(interaction_matrix, k)

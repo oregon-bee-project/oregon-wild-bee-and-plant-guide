@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import json
 from collections import Counter
 
 import geopandas as gpd
@@ -7,27 +8,11 @@ from shapely.geometry import Point
 
 shape_files = {"county": "../frontend/public/GeoJSON/county.json",
                "ecoregion": "../frontend/public/GeoJSON/ecoregion.json",
-               "refuge": "../frontend/public/GeoJSON/refuges.json",
-               "national-forest": "../frontend/public/GeoJSON/national-forest.json",
-               "park": "../frontend/public/GeoJSON/parks.json"}
-
-sf_key = {"county": "COUNTY_FIP",
-          "ecoregion": "US_L3CODE",
-          "refuge": "FWSREGION", # not correct, dummy value
-          "national-forest": "FORESTNUMB", 
-          "park": "OBJECTID"} #not correct, dummy value
+               "national-forest": "../frontend/public/GeoJSON/national-forest.json",}
 
 sf_name = {"county": "NAME",
            "ecoregion": "US_L3NAME",
-           "refuge": "ORGNAME",
-           "national-forest": "FORESTNAME",
-           "park": "FULL_NAME"}
-
-df_columns = {"county": "USA Counties",
-              "ecoregion": "US Ecoregions Level IV",
-              "refuge": "National Wildlife Refuge Boundaries",
-              "national-forest": "Forest Service National Forest Boundaries",
-              "park": "Oregon State Parks"}
+           "national-forest": "FORESTNAME"}
 
 # Cache for loaded GeoDataFrames to prevent re-reading from disk/URL
 region_cache = {}
@@ -47,58 +32,53 @@ def get_region_from_coordinates(latitude, longitude, region_type):
     containing_region = regions[regions.contains(target_point)]
 
     if not containing_region.empty:
-        return (containing_region[sf_name[region_type]].values[0], int(containing_region[sf_key[region_type]].values[0]))
+        return (containing_region[sf_name[region_type]].values[0], containing_region)
     else:
-        return None
+        return (None, None)
 
-# Updates the response_json with the correct region name and code (which corresponds to the df)
-def set_region_name(response):
+# creates a dataframe using the region key and the df, then passes it into the response_json
+def filter_df(response, df):
+
     try:
         lat, long = float(response['lat']), float(response['long'])
     except:
         response["error"] = True
         response["err_msg"] = "Latitude and Longitude cannot be converted to float"
-        return
-    
-    region_tuple = get_region_from_coordinates(lat, long, response['region_type'])
-    
-    # Return if an error is given
-    if region_tuple is None:
+        return None
+
+    region_name, region_geo = get_region_from_coordinates(lat, long, response['region_type'])
+
+    if region_name is None:
         response["error"] = True
         response["err_msg"] = "Region not found using provided Shape Files"
-        return
-        
-    print(f"region name, region key: {region_tuple}")
-    response["region_name"], response["region_key"] = region_tuple
+        return None
     
-    return
+    print(f"region name = {region_name}")
 
-# creates a dataframe using the region key and the df, then passes it into the response_json
-def filter_df(response, df):
+    response["region_name"] = region_name
 
-    col_name = df_columns[response["region_type"]]
+    filtered_rows = []
 
-    # filter out rows that do not contain the county name
-    df_filtered = df[df[col_name] == response["region_key"]]
-    df_filtered = df_filtered.replace({np.nan: None})
-    #print("Filtered rows column headers:", list(df_filtered.columns))
+    for index, row in df.iterrows():
+        try:
+            cLat, cLon = float(row["decimalLatitude"]), float(row["decimalLongitude"])
+        except (ValueError, TypeError):
+            continue
 
+        point = Point(cLon, cLat)
+        if region_geo.contains(point).any():
+            filtered_rows.append(row)
 
-    if df_filtered.empty and response["region_type"] == "county":
-        county_name = response["region_name"].replace("County", "").strip()
-
-        df_filtered = df[df["county"].str.contains(county_name, case=False, regex=True, na=False)]
-        df_filtered = df_filtered.replace({np.nan: None})
+    if filtered_rows:
+        df_filtered = pd.DataFrame(filtered_rows)
+    else:
+        df_filtered = pd.DataFrame(columns=df.columns)
     
-    response["response"] = df_filtered.to_dict(orient="records")
-    
-    return
+    return df_filtered
 
 
-def summary_stats(response, inat_key):
+def summary_stats(response, inat_key, df):
     # Stats key
-    # numRows - All observations in filtered area
-    # numUniqueBees - 
     stats = {
         "numRows": 0,
         "numUniqueBees": 0,
@@ -114,7 +94,7 @@ def summary_stats(response, inat_key):
         }
     }
 
-    rows = response.get("response") or []
+    rows = df.to_dict(orient="records") or []
     if not isinstance(rows, list):
         rows = []
 

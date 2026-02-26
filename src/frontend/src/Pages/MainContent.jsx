@@ -35,7 +35,7 @@ const MainContent = () => {
       return;
     }
 
-    if (selectedRegion == "") {
+    if (activePrompt === 1 && selectedRegion == "") {
       setErrorDialogMsg("Please set a value for region.");
       return;
     }
@@ -43,35 +43,58 @@ const MainContent = () => {
     // set loading state to true before making API call
     setIsLoading(true);
 
-    const params = new URLSearchParams({
-      lat: selectedCoords.lat,
-      long: selectedCoords.lng,
-      region_type: selectedRegion.toLowerCase(),
-    });
-
     try {
-      const res = await fetch(
-        `${API_BASE}/api/location-data/?${params.toString()}`,
-      );
-
-      if (!res.ok) {
-        const errorJson = await res.json();
-        throw new Error(errorJson.detail);
+      if (activePrompt === 1) {
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: selectedRegion.toLowerCase(),
+        });
+        const res = await fetch(
+          `${API_BASE}/api/location-data/?${params.toString()}`,
+        );
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail);
+        }
+        const json = await res.json();
+        setLocationData(json);
+        setActivePage("data-display");
+      } else if (activePrompt === 2) {
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: (selectedRegion || "county").toLowerCase(),
+        });
+        const res = await fetch(
+          `${API_BASE}/api/best-plants-to-plant/?${params.toString()}`,
+        );
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail ?? errorJson.err_msg ?? "Request failed");
+        }
+        const json = await res.json();
+        if (json.error) {
+          throw new Error(json.err_msg || "Error fetching best plants");
+        }
+        setLocationData(json);
+        setActivePage("data-display");
       }
-
-      const json = await res.json();
-      setLocationData(json);
-      setActivePage("data-display");
     } catch (err) {
-      console.error(err.message);
+      console.error("Error fetching location data:", err.message, err);
       if (err.message == "Region not found using provided Shape Files") {
         setErrorDialogMsg(`Unable to fetch data for the selected
                     coordinates. Please pick a different location on the map.`);
+      } else {
+        setErrorDialogMsg(err.message || "An error occurred while fetching data. Please try again.");
       }
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Determine which page to render
+  const isPromptsMapPage = activePage == "prompts-map";
 
   return (
     <>
@@ -90,7 +113,7 @@ const MainContent = () => {
         gap={{ base: "10px", md: "30px" }}
         direction={{ base: "column", md: "row" }}
       >
-        {activePage == "prompts-map" ? (
+        {isPromptsMapPage ? (
           <>
             {/* Mobile hamburger menu button - only visible on mobile */}
             <Button
@@ -158,6 +181,7 @@ const MainContent = () => {
         ) : (
           <DataDisplay
             locationData={locationData}
+            activePrompt={activePrompt}
             selectedCoords={selectedCoords}
             setActivePage={setActivePage}
             setActivePrompt={setActivePrompt}

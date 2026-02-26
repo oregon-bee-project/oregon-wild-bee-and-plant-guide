@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
+import get_best_plants as bp
 import parse_viz as pv
 import flatten_summary as fs
 from create_pdf import generate_pdf_from_rows as g_pdf
@@ -50,34 +51,52 @@ def location_root(lat: float, long: float, region_type: str):
         "response": [],
         "region_type": region_type,
         "region_name": "",
-        "region_key": "",
         "lat": lat,
         "long": long,
         "error": False,
         "err_msg" : ""
     }
     
-    sl.set_region_name(response_json)
-    
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
     
-    sl.summary_stats(response_json, inat_key)
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     return response_json
 
 @app.get("/api/best-plants-to-plant/")
-def run_model_root(lat: float, long: float): # is the root naming convention standard
+def best_plants_root(lat: float, long: float, region_type: str = "county"):
     response_json = {
         "response": [],
         "error": False,
-        "err_msg" : ""
+        "err_msg": "",
+        "region_name": "",
+        "region_key": "",
+        "lat": lat,
+        "long": long,
     }
-    # TODO: Finish implementing this
-    rm.get_best_plants(response_json, lat, long)
-    
+    # Resolve region name for display (same as location-data); do not fail request if not found
+    region_lookup = {"lat": lat, "long": long, "region_type": region_type, "error": False, "err_msg": ""}
+    sl.set_region_name(region_lookup)
+    if not region_lookup.get("error"):
+        response_json["region_name"] = region_lookup.get("region_name", "")
+        response_json["region_key"] = region_lookup.get("region_key", "")
+    bp.get_best_plants(response_json, lat, long)
+    # Enrich list of plant IDs with display names and images from taxa lookup
+    ids = response_json.get("response") or []
+    if isinstance(ids, list) and ids:
+        enriched = []
+        for rank, plant_id in enumerate(ids[:5], start=1):
+            display = bp.lookup_plant_display(inat_key, plant_id)
+            enriched.append({
+                "rank": rank,
+                "commonName": display["commonName"],
+                "iNatTaxonName": display["iNatTaxonName"],
+                "iNatURL": display["iNatURL"],
+            })
+        response_json["response"] = enriched
     return response_json
 
 @app.post("/api/export-pdf/")
@@ -94,19 +113,22 @@ def export_pdf(payload: dict):
     response_json = {
         "response": [],
         "region_type": payload.get("region_type"),
+        "region_name": "",
         "lat": lat,
         "long": long,
         "error": False,
-        "err_msg": ""
+        "err_msg" : ""
     }
 
     # Run your pipeline
-    sl.set_region_name(response_json)
+    
+
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
-    sl.summary_stats(response_json, inat_key)
+    
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     summary_stats = response_json.get("response", [])
     rows = fs.flatten_summary(summary_stats)
@@ -115,9 +137,12 @@ def export_pdf(payload: dict):
         raise HTTPException(status_code=404, detail="No data returned for selected location.")
 
     # Generate PDF
-    pdf_buffer = g_pdf(rows, title="Bee Data Export")
+    title = "Common Bee and Plant Report"
+    location = response_json["region_name"]
+    pdf_buffer = g_pdf(rows, title=title, location=location)
 
-    filename = "beedata_export.pdf"
+    safe_location = location.replace(" ","_")
+    filename = f"{safe_location}_Common_Bee_Plant_Report.pdf"
 
     return StreamingResponse(
         pdf_buffer,
