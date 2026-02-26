@@ -1,9 +1,10 @@
-import { Box, Flex, Button, Heading, Text, Stack } from "@chakra-ui/react";
+import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 
 const DataDisplay = ({
   locationData,
+  activePrompt,
   selectedCoords,
   selectedRegion,
   setActivePage,
@@ -57,6 +58,9 @@ const DataDisplay = ({
     }
   };
 
+  // Determine which branch to render
+  const shouldRenderPlants = locationData && activePrompt === 2;
+
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
       {/* data display area */}
@@ -69,7 +73,65 @@ const DataDisplay = ({
         p={2}
         overflowY="auto"
       >
-        {locationData && <BeeStatsPanel data={locationData} />}
+        {shouldRenderPlants ? (
+          <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
+            <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+              <Heading size="lg" textAlign="center">
+                {locationData.region_name || "Best plants to support bees in your area"}
+              </Heading>
+              <Text textAlign="center" fontSize="md" color="gray.600">
+                Top 5 plants to support bees in your area
+              </Text>
+              {Array.isArray(locationData.response) && locationData.response.length > 0 ? (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  {locationData.response.map((plant, idx) => {
+                    const rank = (plant?.rank != null ? plant.rank : idx + 1);
+                    const commonName = plant?.commonName ?? (typeof plant === "string" ? `Plant #${plant}` : "Unknown");
+                    const iNatTaxonName = plant?.iNatTaxonName ?? "";
+                    const iNatURL = plant?.iNatURL ?? "";
+                    return (
+                      <Box
+                        key={idx}
+                        p={{ base: 4, md: 5 }}
+                        borderRadius="2xl"
+                        boxShadow="md"
+                        bg="green.50"
+                      >
+                        <Heading size="sm" mb={2}>
+                          #{rank}
+                        </Heading>
+                        <Text fontSize="lg" fontWeight="bold">
+                          {commonName}
+                        </Text>
+                        {iNatTaxonName ? (
+                          <Text fontStyle="italic" color="gray.600">
+                            {iNatTaxonName}
+                          </Text>
+                        ) : null}
+                        {iNatURL ? (
+                          <Image
+                            src={iNatURL}
+                            alt={commonName}
+                            borderRadius="xl"
+                            mt={4}
+                            maxH="200px"
+                            objectFit="cover"
+                          />
+                        ) : null}
+                      </Box>
+                    );
+                  })}
+                </SimpleGrid>
+              ) : (
+                <Text color="gray.600" fontStyle="italic">
+                  No plants found. Please try selecting a different location.
+                </Text>
+              )}
+            </VStack>
+          </Box>
+        ) : (
+          <BeeStatsPanel data={locationData} />
+        )}
       </Box>
       <Flex gap="8px">
         <Button
@@ -84,14 +146,16 @@ const DataDisplay = ({
         >
           <LuRefreshCcw /> Try a New Prompt
         </Button>
-        <Button
-          flex="1"
-          bg="blue.600"
-          _hover={{ bg: "blue.500" }}
-          onClick={handleExport}
-        >
-          <LuFileUp /> Export Results
-        </Button>
+        {activePrompt === 1 && (
+          <Button
+            flex="1"
+            bg="blue.600"
+            _hover={{ bg: "blue.500" }}
+            onClick={handleExport}
+          >
+            <LuFileUp /> Export Results
+          </Button>
+        )}
       </Flex>
     </Flex>
   );
