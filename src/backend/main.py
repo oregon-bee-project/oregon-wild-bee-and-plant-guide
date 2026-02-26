@@ -34,6 +34,16 @@ inat_key = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-
 def read_root():
     return {"Hello": "World"}
 
+@app.api_route("/health", methods=["GET", "HEAD"])
+def health():
+    """
+    Health check endpoint to ping service and prevent it
+    from spinning down when there is low activity.
+
+    Used by UptimeRobot (uses HEAD method to ping).
+    """
+    return {"status": "live"}
+
 @app.get("/api/location-data/")
 def location_root(lat: float, long: float, region_type: str):
     response_json = {
