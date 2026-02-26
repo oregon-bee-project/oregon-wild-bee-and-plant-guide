@@ -61,7 +61,6 @@ PyYAML==6.0.3
 reportlab==4.4.9
 requests==2.31.0
 rich==13.7.1
-scikit-learn==1.8.0
 setuptools==75.8.0
 shapely==2.1.2
 six==1.17.0

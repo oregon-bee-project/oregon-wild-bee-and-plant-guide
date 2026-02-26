@@ -41,21 +41,18 @@ def location_root(lat: float, long: float, region_type: str):
         "response": [],
         "region_type": region_type,
         "region_name": "",
-        "region_key": "",
         "lat": lat,
         "long": long,
         "error": False,
         "err_msg" : ""
     }
     
-    sl.set_region_name(response_json)
-    
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
     
-    sl.summary_stats(response_json, inat_key)
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     return response_json
 
@@ -106,19 +103,22 @@ def export_pdf(payload: dict):
     response_json = {
         "response": [],
         "region_type": payload.get("region_type"),
+        "region_name": "",
         "lat": lat,
         "long": long,
         "error": False,
-        "err_msg": ""
+        "err_msg" : ""
     }
 
     # Run your pipeline
-    sl.set_region_name(response_json)
+    
+
+    filtered_df = sl.filter_df(response_json, full_df)
+
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
-
-    sl.filter_df(response_json, full_df)
-    sl.summary_stats(response_json, inat_key)
+    
+    sl.summary_stats(response_json, inat_key, filtered_df)
 
     summary_stats = response_json.get("response", [])
     rows = fs.flatten_summary(summary_stats)
@@ -127,9 +127,12 @@ def export_pdf(payload: dict):
         raise HTTPException(status_code=404, detail="No data returned for selected location.")
 
     # Generate PDF
-    pdf_buffer = g_pdf(rows, title="Bee Data Export")
+    title = "Common Bee and Plant Report"
+    location = response_json["region_name"]
+    pdf_buffer = g_pdf(rows, title=title, location=location)
 
-    filename = "beedata_export.pdf"
+    safe_location = location.replace(" ","_")
+    filename = f"{safe_location}_Common_Bee_Plant_Report.pdf"
 
     return StreamingResponse(
         pdf_buffer,

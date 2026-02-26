@@ -41,7 +41,15 @@ const DataDisplay = ({
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = "export.pdf"; // filename
+      //look for file name
+      const disposition = response.headers.get("Content-Disposition");
+      let filename = "export.pdf"; // fallback
+
+      if (disposition && disposition.includes("filename=")) {
+        filename = disposition.split("filename=")[1].replace(/"/g, ""); // remove quotes if present
+      }
+
+      link.download = filename; // filename
       link.click();
 
       window.URL.revokeObjectURL(url);
