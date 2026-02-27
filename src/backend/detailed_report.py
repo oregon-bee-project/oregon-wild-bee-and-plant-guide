@@ -1,10 +1,6 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-import pandas as pd
 
 
 def everySpeciesList (response, inat_key, df):
@@ -174,11 +170,30 @@ def everySpeciesList (response, inat_key, df):
 
     return
 
-def heatmap (df):
+def heatmap_as_image(df):
+    """
+    Renders the density heatmap as a PNG and returns the raw bytes.
+    Returns None if plotly or kaleido are not installed.
+    """
+    try:
+        import plotly.express as px
+        fig = heatmap(df)
+        return fig.to_image(format="png", width=1100, height=700, scale=2)
+    except Exception:
+        return None
+
+
+def heatmap(df):
+    """
+    Generates a Plotly density heatmap from a filtered observations DataFrame.
+    Returns the plotly Figure object so callers can decide how to render or export it.
+    Dependencies (plotly) are imported lazily so the server starts without them installed.
+    """
+    import plotly.express as px
 
     lat_min, lat_max = df['decimalLatitude'].min(), df['decimalLatitude'].max()
     lon_min, lon_max = df['decimalLongitude'].min(), df['decimalLongitude'].max()
-    
+
     center_lat = (lat_min + lat_max) / 2
     center_lon = (lon_min + lon_max) / 2
 
@@ -189,15 +204,17 @@ def heatmap (df):
 
     dynamic_radius = 150 / (zoom_level if zoom_level > 0 else 1)
 
-    fig = px.density_mapbox(df, 
-                            lat='decimalLatitude', 
-                            lon='decimalLongitude', 
-                            radius= dynamic_radius, 
-                            range_color = [0, len(df) ** 0.5], 
-                            center=dict(lat=center_lat, lon=center_lon), 
-                            zoom = zoom_level, 
-                            mapbox_style="open-street-map")
-    
+    fig = px.density_mapbox(
+        df,
+        lat='decimalLatitude',
+        lon='decimalLongitude',
+        radius=dynamic_radius,
+        range_color=[0, len(df) ** 0.5],
+        center=dict(lat=center_lat, lon=center_lon),
+        zoom=zoom_level,
+        mapbox_style="open-street-map"
+    )
+
     fig.update_layout(
         mapbox=dict(
             bounds=dict(
@@ -207,9 +224,7 @@ def heatmap (df):
                 north=lat_max + 0.2
             )
         ),
-        margin={"r":0,"t":0,"l":0,"b":0}
+        margin={"r": 0, "t": 0, "l": 0, "b": 0}
     )
-    
-    fig.show()
 
-    return
+    return fig

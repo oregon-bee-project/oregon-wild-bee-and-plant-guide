@@ -44,10 +44,14 @@ const MainContent = () => {
       region_type: selectedRegion.toLowerCase(),
     });
 
+    const endpointMap = {
+      1: "/api/location-data/",
+      3: "/api/detailed-report/",
+    };
+    const endpoint = endpointMap[activePrompt] ?? "/api/location-data/";
+
     try {
-      const res = await fetch(
-        `${API_BASE}/api/location-data/?${params.toString()}`,
-      );
+      const res = await fetch(`${API_BASE}${endpoint}?${params.toString()}`);
 
       if (!res.ok) {
         const errorJson = await res.json();
@@ -154,6 +158,7 @@ const MainContent = () => {
             setActivePrompt={setActivePrompt}
             setSelectedCoords={setSelectedCoords}
             selectedRegion={selectedRegion}
+            activePrompt={activePrompt}
           />
         )}
       </Flex>
