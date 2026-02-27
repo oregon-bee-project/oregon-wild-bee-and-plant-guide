@@ -14,7 +14,7 @@ const prompts = [
     id: 2,
     title: "Plants",
     description: "What plants should I grow to support bees in my area?",
-    state: "wip",
+    state: "ready",
   },
   {
     id: 3,

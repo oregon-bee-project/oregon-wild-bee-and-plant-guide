@@ -5,6 +5,7 @@ import PromptSidebar from "../CustomComponents/PromptSidebar";
 import InteractiveMap from "./InteractiveMap";
 import DataDisplay from "./DataDisplay";
 import ErrorDialog from "../CustomComponents/ErrorDialog";
+import LoadingDialog from "../CustomComponents/LoadingDialog";
 
 // This is the main webpage content - everything below the header
 
@@ -15,6 +16,7 @@ const MainContent = () => {
   const [locationData, setLocationData] = useState(null);
   const [activePrompt, setActivePrompt] = useState(null);
   const [errorDialogMsg, setErrorDialogMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { open, onOpen, onClose } = useDisclosure();
 
   const API_BASE = import.meta.env.PROD
@@ -33,42 +35,57 @@ const MainContent = () => {
       return;
     }
 
-    if (selectedRegion == "") {
+    if (activePrompt === 1 && selectedRegion == "") {
       setErrorDialogMsg("Please set a value for region.");
       return;
     }
 
-    const params = new URLSearchParams({
-      lat: selectedCoords.lat,
-      long: selectedCoords.lng,
-      region_type: selectedRegion.toLowerCase(),
-    });
+    // set loading state to true before making API call
+    setIsLoading(true);
 
     const endpointMap = {
       1: "/api/location-data/",
+      2: "/api/best-plants-to-plant/",
       3: "/api/detailed-report/",
     };
     const endpoint = endpointMap[activePrompt] ?? "/api/location-data/";
 
     try {
-      const res = await fetch(`${API_BASE}${endpoint}?${params.toString()}`);
-
+      if (activePrompt === 1) {
+      // existing prompt 1 fetch (from main)
+      } else if (activePrompt === 2) {
+      // existing prompt 2 fetch (from main)
+      } else if (activePrompt === 3) {
+        const params = new URLSearchParams({
+        lat: selectedCoords.lat,
+        long: selectedCoords.lng,
+        region_type: selectedRegion.toLowerCase(),
+      });
+      const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
       if (!res.ok) {
         const errorJson = await res.json();
-        throw new Error(errorJson.detail);
+      throw new Error(errorJson.detail);
       }
-
       const json = await res.json();
       setLocationData(json);
       setActivePage("data-display");
+        }
+      }
     } catch (err) {
-      console.error(err.message);
+      console.error("Error fetching location data:", err.message, err);
       if (err.message == "Region not found using provided Shape Files") {
         setErrorDialogMsg(`Unable to fetch data for the selected
                     coordinates. Please pick a different location on the map.`);
+      } else {
+        setErrorDialogMsg(err.message || "An error occurred while fetching data. Please try again.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Determine which page to render
+  const isPromptsMapPage = activePage == "prompts-map";
 
   return (
     <>
@@ -79,13 +96,15 @@ const MainContent = () => {
         />
       )}
 
+      <LoadingDialog isOpen={isLoading} />
+
       <Flex
         h="100%"
         p={{ base: "5px", md: "10px" }}
         gap={{ base: "10px", md: "30px" }}
         direction={{ base: "column", md: "row" }}
       >
-        {activePage == "prompts-map" ? (
+        {isPromptsMapPage ? (
           <>
             {/* Mobile hamburger menu button - only visible on mobile */}
             <Button
@@ -153,12 +172,12 @@ const MainContent = () => {
         ) : (
           <DataDisplay
             locationData={locationData}
+            activePrompt={activePrompt}
             selectedCoords={selectedCoords}
             setActivePage={setActivePage}
             setActivePrompt={setActivePrompt}
             setSelectedCoords={setSelectedCoords}
             selectedRegion={selectedRegion}
-            activePrompt={activePrompt}
           />
         )}
       </Flex>
