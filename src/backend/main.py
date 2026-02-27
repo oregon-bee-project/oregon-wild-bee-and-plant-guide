@@ -78,12 +78,13 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
         "long": long,
     }
     # Resolve region name for display (same as location-data); do not fail request if not found
-    region_lookup = {"lat": lat, "long": long, "region_type": region_type, "error": False, "err_msg": ""}
-    sl.set_region_name(region_lookup)
-    if not region_lookup.get("error"):
-        response_json["region_name"] = region_lookup.get("region_name", "")
-        response_json["region_key"] = region_lookup.get("region_key", "")
-    bp.get_best_plants(response_json, lat, long)
+    try:
+        region_name, _ = sl.get_region_from_coordinates(lat, long, region_type)
+        if region_name:
+            response_json["region_name"] = region_name
+    except Exception:
+        pass
+    bp.get_best_plants(response_json, lat, long, inat_key=inat_key)
     # Enrich list of plant IDs with display names and images from taxa lookup
     ids = response_json.get("response") or []
     if isinstance(ids, list) and ids:

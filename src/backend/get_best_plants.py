@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 
 def _normalize_string(value):
@@ -45,20 +46,37 @@ def lookup_plant_display(inat_key, plant_id):
     }
 
 
-def get_best_plants(response: dict, lat: float, long: float) -> None:
-    """
-    Update the response JSON to include 5 best plants based on interaction sums.
+def _load_oregon_flora_names():
+    """Load the set of scientific names from oregon_flora_plants.json."""
+    with open("../data/oregon_flora_plants.json", encoding="utf-8") as f:
+        plants = json.load(f)
+    return {p["scientific_name"].strip().lower() for p in plants}
 
-    TODO: Add a filter to the plants based on the allowed plants in the dictionary 
-    that is also based on the latitude and longitude of the user.
+
+def get_best_plants(response: dict, lat: float, long: float, inat_key=None) -> None:
+    """
+    Update the response JSON to include 5 best plants based on interaction sums,
+    filtered to only plants found in the Oregon Flora garden list.
     """
     try:
         predicted_interactions = pd.read_csv("../data/predicted_interactions.csv", index_col=0)
 
         plant_scores = predicted_interactions.sum(axis=0)
 
-        # TODO: filter allowed_plants with dictionary here:
-        # plant_scores = plant_scores[plant_scores.index.isin(allowed_plants_keys)]
+        # Filter to plants that appear in Oregon Flora
+        if inat_key is not None:
+            oregon_names = _load_oregon_flora_names()
+            allowed_ids = []
+            for pid in plant_scores.index:
+                try:
+                    row = inat_key[inat_key["id"] == int(float(pid))]
+                    if not row.empty:
+                        taxon = row["iNaturalistTaxonName"].iloc[0]
+                        if isinstance(taxon, str) and taxon.strip().lower() in oregon_names:
+                            allowed_ids.append(pid)
+                except (ValueError, TypeError):
+                    continue
+            plant_scores = plant_scores[plant_scores.index.isin(allowed_ids)]
 
         top_5_plants = plant_scores.nlargest(5).index.tolist()
 
