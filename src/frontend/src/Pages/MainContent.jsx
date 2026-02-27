@@ -43,33 +43,52 @@ const MainContent = () => {
     // set loading state to true before making API call
     setIsLoading(true);
 
-    const endpointMap = {
-      1: "/api/location-data/",
-      2: "/api/best-plants-to-plant/",
-      3: "/api/detailed-report/",
-    };
-    const endpoint = endpointMap[activePrompt] ?? "/api/location-data/";
-
     try {
       if (activePrompt === 1) {
-      // existing prompt 1 fetch (from main)
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: selectedRegion.toLowerCase(),
+        });
+        const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail);
+        }
+        const json = await res.json();
+        setLocationData(json);
+        setActivePage("data-display");
       } else if (activePrompt === 2) {
-      // existing prompt 2 fetch (from main)
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: (selectedRegion || "county").toLowerCase(),
+        });
+        const res = await fetch(`${API_BASE}/api/best-plants-to-plant/?${params.toString()}`);
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail ?? errorJson.err_msg ?? "Request failed");
+        }
+        const json = await res.json();
+        if (json.error) {
+          throw new Error(json.err_msg || "Error fetching best plants");
+        }
+        setLocationData(json);
+        setActivePage("data-display");
       } else if (activePrompt === 3) {
         const params = new URLSearchParams({
-        lat: selectedCoords.lat,
-        long: selectedCoords.lng,
-        region_type: selectedRegion.toLowerCase(),
-      });
-      const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
-      if (!res.ok) {
-        const errorJson = await res.json();
-      throw new Error(errorJson.detail);
-      }
-      const json = await res.json();
-      setLocationData(json);
-      setActivePage("data-display");
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: selectedRegion.toLowerCase(),
+        });
+        const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail);
         }
+        const json = await res.json();
+        setLocationData(json);
+        setActivePage("data-display");
       }
     } catch (err) {
       console.error("Error fetching location data:", err.message, err);
