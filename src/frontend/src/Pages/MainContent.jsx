@@ -50,9 +50,7 @@ const MainContent = () => {
           long: selectedCoords.lng,
           region_type: selectedRegion.toLowerCase(),
         });
-        const res = await fetch(
-          `${API_BASE}/api/location-data/?${params.toString()}`,
-        );
+        const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
         if (!res.ok) {
           const errorJson = await res.json();
           throw new Error(errorJson.detail);
@@ -66,9 +64,7 @@ const MainContent = () => {
           long: selectedCoords.lng,
           region_type: (selectedRegion || "county").toLowerCase(),
         });
-        const res = await fetch(
-          `${API_BASE}/api/best-plants-to-plant/?${params.toString()}`,
-        );
+        const res = await fetch(`${API_BASE}/api/best-plants-to-plant/?${params.toString()}`);
         if (!res.ok) {
           const errorJson = await res.json();
           throw new Error(errorJson.detail ?? errorJson.err_msg ?? "Request failed");
@@ -77,6 +73,20 @@ const MainContent = () => {
         if (json.error) {
           throw new Error(json.err_msg || "Error fetching best plants");
         }
+        setLocationData(json);
+        setActivePage("data-display");
+      } else if (activePrompt === 3) {
+        const params = new URLSearchParams({
+          lat: selectedCoords.lat,
+          long: selectedCoords.lng,
+          region_type: selectedRegion.toLowerCase(),
+        });
+        const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
+        if (!res.ok) {
+          const errorJson = await res.json();
+          throw new Error(errorJson.detail);
+        }
+        const json = await res.json();
         setLocationData(json);
         setActivePage("data-display");
       }

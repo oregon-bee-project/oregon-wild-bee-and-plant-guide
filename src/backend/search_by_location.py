@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import json
 from collections import Counter
-
+ 
 import geopandas as gpd
 from shapely.geometry import Point
 
@@ -57,24 +57,17 @@ def filter_df(response, df):
 
     response["region_name"] = region_name
 
-    filtered_rows = []
-
-    for index, row in df.iterrows():
-        try:
-            cLat, cLon = float(row["decimalLatitude"]), float(row["decimalLongitude"])
-        except (ValueError, TypeError):
-            continue
-
-        point = Point(cLon, cLat)
-        if region_geo.contains(point).any():
-            filtered_rows.append(row)
-
-    if filtered_rows:
-        df_filtered = pd.DataFrame(filtered_rows)
-    else:
-        df_filtered = pd.DataFrame(columns=df.columns)
-    
-    return df_filtered
+    obs_gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(
+            pd.to_numeric(df["decimalLongitude"], errors="coerce"),
+            pd.to_numeric(df["decimalLatitude"],  errors="coerce"),
+        ),
+        crs="EPSG:4326",
+    )
+    obs_gdf = obs_gdf.dropna(subset=["geometry"])
+    filtered_df = gpd.sjoin(obs_gdf, region_geo[["geometry"]], how="inner", predicate="within")
+    return pd.DataFrame(filtered_df.drop(columns=["geometry", "index_right"], errors="ignore"))
 
 
 def summary_stats(response, inat_key, df):

@@ -1,6 +1,7 @@
 import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
+import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
 
 const DataDisplay = ({
   locationData,
@@ -11,16 +12,24 @@ const DataDisplay = ({
   setActivePrompt,
   setSelectedCoords,
 }) => {
-  // On click of export, send post request to backend to generate CSV
+  // On click of export, send post request to backend to generate PDF
   // Render API base
   const API_BASE = import.meta.env.PROD
     ? "https://bee-data-api.onrender.com" // this is what the url prefix will be in production
     : "";
+
+  const exportEndpointMap = {
+    1: "/api/export-pdf/",
+    3: "/api/export-detailed-pdf/",
+  };
+
   const handleExport = async () => {
     if (!locationData) return;
 
+    const exportEndpoint = exportEndpointMap[activePrompt] ?? "/api/export-pdf/";
+
     try {
-      const response = await fetch(`${API_BASE}/api/export-pdf`, {
+      const response = await fetch(`${API_BASE}${exportEndpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -30,7 +39,6 @@ const DataDisplay = ({
           region_type: selectedRegion,
         }),
       });
-      console.log(selectedRegion);
 
       if (!response.ok) {
         throw new Error("Failed to export PDF");
@@ -41,7 +49,6 @@ const DataDisplay = ({
 
       const link = document.createElement("a");
       link.href = url;
-      //look for file name
       const disposition = response.headers.get("Content-Disposition");
       let filename = "export.pdf"; // fallback
 
@@ -49,7 +56,7 @@ const DataDisplay = ({
         filename = disposition.split("filename=")[1].replace(/"/g, ""); // remove quotes if present
       }
 
-      link.download = filename; // filename
+      link.download = filename;
       link.click();
 
       window.URL.revokeObjectURL(url);
@@ -57,9 +64,6 @@ const DataDisplay = ({
       console.error("Export error:", error);
     }
   };
-
-  // Determine which branch to render
-  const shouldRenderPlants = locationData && activePrompt === 2;
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
@@ -73,7 +77,8 @@ const DataDisplay = ({
         p={2}
         overflowY="auto"
       >
-        {shouldRenderPlants ? (
+        {locationData && activePrompt === 1 && <BeeStatsPanel data={locationData} />}
+        {locationData && activePrompt === 2 && (
           <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
             <VStack spacing={{ base: 4, md: 6 }} align="stretch">
               <Heading size="lg" textAlign="center">
@@ -129,9 +134,8 @@ const DataDisplay = ({
               )}
             </VStack>
           </Box>
-        ) : (
-          <BeeStatsPanel data={locationData} />
         )}
+        {locationData && activePrompt === 3 && <DetailedReportPanel data={locationData} />}
       </Box>
       <Flex gap="8px">
         <Button
@@ -146,7 +150,7 @@ const DataDisplay = ({
         >
           <LuRefreshCcw /> Try a New Prompt
         </Button>
-        {activePrompt === 1 && (
+        {(activePrompt === 1 || activePrompt === 3) && (
           <Button
             flex="1"
             bg="blue.600"

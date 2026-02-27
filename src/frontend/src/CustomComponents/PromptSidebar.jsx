@@ -21,7 +21,7 @@ const prompts = [
     title: "Detailed Summary Report",
     description:
       "Show me a detailed report of bee and plant species in my area",
-    state: "wip",
+    state: "ready",
   },
 ];
 
