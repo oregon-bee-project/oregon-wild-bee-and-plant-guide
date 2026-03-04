@@ -53,10 +53,18 @@ def _load_oregon_flora_names():
     return {p["scientific_name"].strip().lower() for p in plants}
 
 
-def get_best_plants(response: dict, lat: float, long: float, inat_key=None) -> None:
+def get_best_plants(
+    response: dict,
+    lat: float,
+    long: float,
+    inat_key=None,
+    allowed_plant_ids=None,
+) -> None:
     """
     Update the response JSON to include 5 best plants based on interaction sums,
-    filtered to only plants found in the Oregon Flora garden list.
+    filtered to only plants found in the Oregon Flora garden list and,
+    when provided, to plants observed at least once in the user's Level III
+    ecoregion (allowed_plant_ids).
     """
     try:
         predicted_interactions = pd.read_csv("../data/predicted_interactions.csv", index_col=0)
@@ -77,6 +85,21 @@ def get_best_plants(response: dict, lat: float, long: float, inat_key=None) -> N
                 except (ValueError, TypeError):
                     continue
             plant_scores = plant_scores[plant_scores.index.isin(allowed_ids)]
+
+        # Further restrict to plants that appear at least once in the user's
+        # Level III ecoregion, if an allowed set is provided.
+        if allowed_plant_ids:
+            allowed_set = {str(pid) for pid in allowed_plant_ids}
+            plant_scores = plant_scores[plant_scores.index.astype(str).isin(allowed_set)]
+
+        # If no plants remain after filtering, surface a clear error.
+        if plant_scores.empty:
+            response["response"] = []
+            response["error"] = True
+            # Only override err_msg if nothing more specific was set earlier.
+            if not response.get("err_msg"):
+                response["err_msg"] = "No plants found in the selected ecoregion"
+            return
 
         top_5_plants = plant_scores.nlargest(5).index.tolist()
 

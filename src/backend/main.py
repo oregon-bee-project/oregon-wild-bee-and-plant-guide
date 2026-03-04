@@ -156,7 +156,36 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
             response_json["region_name"] = region_name
     except Exception:
         pass
-    bp.get_best_plants(response_json, lat, long, inat_key=inat_key)
+
+    # Only reccomend plants that are observed in the same ecoregion that the user selected at least once
+    allowed_plants = None
+    try:
+        eco_response = {
+            "response": [],
+            "region_type": "ecoregion",
+            "region_name": "",
+            "lat": lat,
+            "long": long,
+            "error": False,
+            "err_msg": "",
+        }
+        eco_filtered_df = sl.filter_df(eco_response, full_df)
+        if (
+            not eco_response.get("error")
+            and eco_filtered_df is not None
+            and not eco_filtered_df.empty
+            and "plantINatId" in eco_filtered_df.columns
+        ):
+            allowed_plants = set(
+                eco_filtered_df["plantINatId"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+    except Exception:
+        allowed_plants = None
+
+    bp.get_best_plants(response_json, lat, long, inat_key=inat_key, allowed_plant_ids=allowed_plants)
     # Enrich list of plant IDs with display names and images from taxa lookup
     ids = response_json.get("response") or []
     if isinstance(ids, list) and ids:
