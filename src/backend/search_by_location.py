@@ -70,6 +70,39 @@ def filter_df(response, df):
     return pd.DataFrame(filtered_df.drop(columns=["geometry", "index_right"], errors="ignore"))
 
 
+def get_plant_top_bees(obs_df, top_n=5):
+    """
+    From an observations DataFrame (with plantINatId and bee name columns),
+    return a dict: plant_id (str) -> list of {scientificName, count} for the top_n bees by observed count.
+    """
+    if obs_df is None or obs_df.empty:
+        return {}
+
+    def _norm(v):
+        if v is None:
+            return None
+        if isinstance(v, float) and pd.isna(v):
+            return None
+        if isinstance(v, str):
+            t = v.strip()
+            return t or None
+        return str(v)
+
+    plant_bee = {}
+    for row in obs_df.to_dict(orient="records"):
+        bee_name = _norm(row.get("scientificName")) or _norm(row.get("specificEpithetVolDet"))
+        plant_value = _norm(row.get("plantINatId"))
+        if plant_value and bee_name:
+            if plant_value not in plant_bee:
+                plant_bee[plant_value] = Counter()
+            plant_bee[plant_value][bee_name] += 1
+
+    return {
+        str(pid): [{"scientificName": bee, "count": int(count)} for bee, count in counter.most_common(top_n)]
+        for pid, counter in plant_bee.items()
+    }
+
+
 def summary_stats(response, inat_key, df):
     # Stats key
     stats = {

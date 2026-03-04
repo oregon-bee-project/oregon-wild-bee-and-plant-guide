@@ -156,18 +156,61 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
             response_json["region_name"] = region_name
     except Exception:
         pass
-    bp.get_best_plants(response_json, lat, long, inat_key=inat_key)
-    # Enrich list of plant IDs with display names and images from taxa lookup
-    ids = response_json.get("response") or []
-    if isinstance(ids, list) and ids:
+
+    # Only reccomend plants that are observed in the same ecoregion that the user selected at least once
+    allowed_plants = None
+    eco_filtered_df = None
+    eco_response = None
+    try:
+        eco_response = {
+            "response": [],
+            "region_type": "ecoregion",
+            "region_name": "",
+            "lat": lat,
+            "long": long,
+            "error": False,
+            "err_msg": "",
+        }
+        eco_filtered_df = sl.filter_df(eco_response, full_df)
+        if (
+            not eco_response.get("error")
+            and eco_filtered_df is not None
+            and not eco_filtered_df.empty
+            and "plantINatId" in eco_filtered_df.columns
+        ):
+            allowed_plants = set(
+                eco_filtered_df["plantINatId"]
+                .dropna()
+                .astype(str)
+                .tolist()
+            )
+    except Exception:
+        allowed_plants = None
+
+    # Use ecoregion name for display header (plants are filtered by ecoregion)
+    if eco_response and eco_response.get("region_name"):
+        response_json["region_name"] = eco_response["region_name"]
+
+    bp.get_best_plants(response_json, lat, long, inat_key=inat_key, allowed_plant_ids=allowed_plants)
+    # Top bees per plant from observed interactions in the same ecoregion
+    plant_top_bees = sl.get_plant_top_bees(eco_filtered_df, top_n=5) if eco_filtered_df is not None else {}
+    # Enrich list of plant IDs with display names, images, scores, and top bees
+    raw_response = response_json.get("response") or []
+    if isinstance(raw_response, list) and raw_response:
         enriched = []
-        for rank, plant_id in enumerate(ids[:5], start=1):
+        for rank, item in enumerate(raw_response[:5], start=1):
+            plant_id = item.get("id", item) if isinstance(item, dict) else item
+            score = item.get("score") if isinstance(item, dict) else None
             display = bp.lookup_plant_display(inat_key, plant_id)
+            pid_str = str(plant_id)
+            top_bees = plant_top_bees.get(pid_str, [])
             enriched.append({
                 "rank": rank,
                 "commonName": display["commonName"],
                 "iNatTaxonName": display["iNatTaxonName"],
                 "iNatURL": display["iNatURL"],
+                "score": score,
+                "topBees": top_bees,
             })
         response_json["response"] = enriched
     return response_json
