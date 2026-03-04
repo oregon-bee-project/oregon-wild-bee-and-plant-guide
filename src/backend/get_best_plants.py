@@ -102,8 +102,10 @@ def get_best_plants(
             return
 
         top_5_plants = plant_scores.nlargest(5).index.tolist()
-
-        response["response"] = top_5_plants
+        response["response"] = [
+            {"id": pid, "score": float(plant_scores[pid])}
+            for pid in top_5_plants
+        ]
         response["error"] = False
         response["err_msg"] = ""
 
