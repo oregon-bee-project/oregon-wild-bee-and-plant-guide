@@ -59,6 +59,7 @@ def get_best_plants(
     long: float,
     inat_key=None,
     allowed_plant_ids=None,
+    regional_bee_counts=None,
 ) -> None:
     """
     Update the response JSON to include 5 best plants based on interaction sums,
@@ -69,7 +70,27 @@ def get_best_plants(
     try:
         predicted_interactions = pd.read_csv("../data/predicted_interactions.csv", index_col=0)
 
-        plant_scores = predicted_interactions.sum(axis=0)
+        # Weight each bee row by how frequently it is observed in the region.
+        # Bees not seen in the region get weight 0 and are excluded from scoring,
+        # so plants that attract locally-present bees rank higher.
+        if regional_bee_counts:
+            bee_ids = predicted_interactions.index.astype(str)
+            weights = pd.Series(
+                [regional_bee_counts.get(b, 0) for b in bee_ids],
+                index=predicted_interactions.index,
+                dtype=float,
+            )
+            regional_mask = weights > 0
+            if regional_mask.any():
+                plant_scores = (
+                    predicted_interactions[regional_mask]
+                    .multiply(weights[regional_mask], axis=0)
+                    .sum(axis=0)
+                )
+            else:
+                plant_scores = predicted_interactions.sum(axis=0)
+        else:
+            plant_scores = predicted_interactions.sum(axis=0)
 
         # Filter to plants that appear in Oregon Flora
         if inat_key is not None:

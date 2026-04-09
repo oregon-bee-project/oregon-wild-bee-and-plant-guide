@@ -191,7 +191,8 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
     if eco_response and eco_response.get("region_name"):
         response_json["region_name"] = eco_response["region_name"]
 
-    bp.get_best_plants(response_json, lat, long, inat_key=inat_key, allowed_plant_ids=allowed_plants)
+    regional_bee_counts = sl.get_regional_bee_counts(eco_filtered_df) if eco_filtered_df is not None else {}
+    bp.get_best_plants(response_json, lat, long, inat_key=inat_key, allowed_plant_ids=allowed_plants, regional_bee_counts=regional_bee_counts)
     # Top bees per plant from observed interactions in the same ecoregion
     plant_top_bees = sl.get_plant_top_bees(eco_filtered_df, top_n=5) if eco_filtered_df is not None else {}
     # Enrich list of plant IDs with display names, images, scores, and top bees
