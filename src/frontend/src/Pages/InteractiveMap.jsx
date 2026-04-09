@@ -4,7 +4,6 @@ import {
   Flex,
   Input,
   Group,
-  InputAddon,
   Button,
   Portal,
   Select,
@@ -26,6 +25,7 @@ const InteractiveMap = ({
   selectedCoords,
   setSelectedCoords,
   setErrorDialogMsg,
+  selectedRegion,
   setSelectedRegion,
 }) => {
   const mapContainerRef = useRef(null);
@@ -33,6 +33,7 @@ const InteractiveMap = ({
   const markerRef = useRef(null);
   const selectedFeatureRef = useRef(null);
   const [address, setAddress] = useState("");
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   const handleLayerChange = (e) => {
     const selectedCategory = e.value[0];
@@ -59,6 +60,32 @@ const InteractiveMap = ({
     markerRef.current.setLngLat([lng, lat]).addTo(mapRef.current);
   };
 
+  const clearSelectedFeature = () => {
+    if (!mapRef.current || !selectedFeatureRef.current) return;
+    mapRef.current.setFeatureState(selectedFeatureRef.current, { selected: false });
+    selectedFeatureRef.current = null;
+  };
+
+  const highlightRegionAtCoords = (lng, lat, region) => {
+    if (!mapRef.current || !region) return false;
+
+    const sourceId = `${region}-source`;
+    const layerId = `${region}-layer`;
+    if (!mapRef.current.getLayer(layerId)) return false;
+
+    const point = mapRef.current.project([lng, lat]);
+    const features = mapRef.current.queryRenderedFeatures(point, { layers: [layerId] });
+    if (!features.length) return false;
+
+    const featureId = features[0].id;
+    if (featureId === undefined || featureId === null) return false;
+
+    clearSelectedFeature();
+    selectedFeatureRef.current = { source: sourceId, id: featureId };
+    mapRef.current.setFeatureState(selectedFeatureRef.current, { selected: true });
+    return true;
+  };
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -73,8 +100,10 @@ const InteractiveMap = ({
     let hoveredFeature = null;
 
     map.on("load", () => {
-      // Set default region to match UI default
-      setSelectedRegion("county");
+      const initialRegion = selectedRegion || "county";
+      if (!selectedRegion) {
+        setSelectedRegion("county");
+      }
 
       overlays.items.forEach((item) => {
         const sourceId = `${item.value}-source`;
@@ -92,7 +121,7 @@ const InteractiveMap = ({
           id: layerId,
           type: "fill",
           source: sourceId,
-          layout: { visibility: item.value === "county" ? "visible" : "none" },
+          layout: { visibility: item.value === initialRegion ? "visible" : "none" },
           paint: {
             "fill-color": item.color,
             "fill-opacity": [
@@ -111,7 +140,7 @@ const InteractiveMap = ({
           id: `${layerId}-outline`,
           type: "line",
           source: sourceId,
-          layout: { visibility: item.value === "county" ? "visible" : "none" },
+          layout: { visibility: item.value === initialRegion ? "visible" : "none" },
           paint: {
             "line-color": "#000000",
             "line-opacity": 0.2,
@@ -151,12 +180,7 @@ const InteractiveMap = ({
         map.on("click", layerId, (e) => {
           if (!e.features.length) return;
           const feature = e.features[0];
-          // Clear previous selection
-          if (selectedFeatureRef.current) {
-            map.setFeatureState(selectedFeatureRef.current, {
-              selected: false,
-            });
-          }
+          clearSelectedFeature();
           // Set new selection
           selectedFeatureRef.current = {
             source: sourceId,
@@ -169,10 +193,57 @@ const InteractiveMap = ({
           placeMarker(lng, lat);
         });
       });
+      setIsMapLoaded(true);
     });
 
     return () => map.remove();
   }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !isMapLoaded || !selectedRegion) return;
+
+    overlays.items.forEach((item) => {
+      const layerId = `${item.value}-layer`;
+      const outlineId = `${layerId}-outline`;
+      const visibility = item.value === selectedRegion ? "visible" : "none";
+
+      if (mapRef.current.getLayer(layerId)) {
+        mapRef.current.setLayoutProperty(layerId, "visibility", visibility);
+      }
+      if (mapRef.current.getLayer(outlineId)) {
+        mapRef.current.setLayoutProperty(outlineId, "visibility", visibility);
+      }
+    });
+  }, [isMapLoaded, selectedRegion]);
+
+  useEffect(() => {
+    if (!mapRef.current || !isMapLoaded) return;
+    if (selectedCoords.lat === "" || selectedCoords.lng === "") return;
+
+    let timeoutId;
+    placeMarker(selectedCoords.lng, selectedCoords.lat);
+
+    const region = selectedRegion || "county";
+    const wasHighlighted = highlightRegionAtCoords(selectedCoords.lng, selectedCoords.lat, region);
+
+    // On remount, rendered features can lag behind map load; retry once after render settles.
+    if (!wasHighlighted) {
+      mapRef.current.once("idle", () => {
+        const highlightedOnIdle = highlightRegionAtCoords(selectedCoords.lng, selectedCoords.lat, region);
+        if (!highlightedOnIdle) {
+          timeoutId = window.setTimeout(() => {
+            highlightRegionAtCoords(selectedCoords.lng, selectedCoords.lat, region);
+          }, 150);
+        }
+      });
+    }
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [isMapLoaded, selectedCoords, selectedRegion]);
 
   const geocodeAddress = async (address) => {
     const response = await fetch(
@@ -203,7 +274,7 @@ const InteractiveMap = ({
       if (mapRef.current) {
         mapRef.current.flyTo({
           center: [coords.lng, coords.lat],
-          zoom: 14,
+          zoom: 10,
         });
       }
 
@@ -223,7 +294,7 @@ const InteractiveMap = ({
           maxW={{base: "100%", md: "15%"}}
           collection={overlays}
           flex={{ base: "1", md: "1" }}
-          defaultValue={["county"]}
+          value={[selectedRegion || "county"]}
           onValueChange={handleLayerChange}
         >
           <Select.HiddenSelect />

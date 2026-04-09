@@ -185,6 +185,7 @@ const MainContent = () => {
               selectedCoords={selectedCoords}
               setSelectedCoords={setSelectedCoords}
               setErrorDialogMsg={setErrorDialogMsg}
+              selectedRegion={selectedRegion}
               setSelectedRegion={setSelectedRegion}
             />
           </>
