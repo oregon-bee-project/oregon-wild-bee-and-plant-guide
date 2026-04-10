@@ -70,6 +70,18 @@ def filter_df(response, df):
     return pd.DataFrame(filtered_df.drop(columns=["geometry", "index_right"], errors="ignore"))
 
 
+def get_regional_bee_counts(df):
+    """
+    Return a dict of {pollinatorINatId_str: observation_count} for bees
+    in an already-filtered regional DataFrame.  Used to weight SVD scores
+    toward plants that attract bees actually present in the region.
+    """
+    if df is None or df.empty or "pollinatorINatId" not in df.columns:
+        return {}
+    counts = df["pollinatorINatId"].dropna().astype(str).value_counts()
+    return counts.to_dict()
+
+
 def get_plant_top_bees(obs_df, top_n=5):
     """
     From an observations DataFrame (with plantINatId and bee name columns),
