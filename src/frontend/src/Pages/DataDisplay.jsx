@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
+import LoadingDialog from "../CustomComponents/LoadingDialog";
 
 const DataDisplay = ({
   locationData,
@@ -12,6 +14,8 @@ const DataDisplay = ({
   setActivePrompt,
   setSelectedCoords,
 }) => {
+  const [exportLoading, setExportLoading] = useState(false);
+
   // On click of export, send post request to backend to generate PDF
   // Render API base
   const API_BASE = import.meta.env.PROD
@@ -23,10 +27,66 @@ const DataDisplay = ({
     3: "/api/export-detailed-pdf/",
   };
 
+  const parseContentDispositionFilename = (disposition, fallback) => {
+    if (!disposition) return fallback;
+    const utf8 = disposition.match(/filename\*=UTF-8''([^;\n]+)/i);
+    if (utf8) {
+      try {
+        return decodeURIComponent(utf8[1].trim());
+      } catch {
+        return fallback;
+      }
+    }
+    const quoted = disposition.match(/filename="([^"]+)"/i);
+    if (quoted) return quoted[1].trim();
+    const plain = disposition.match(/filename=([^;\n]+)/i);
+    if (plain) return plain[1].trim().replace(/^"|"$/g, "");
+    return fallback;
+  };
+
   const handleExport = async () => {
     if (!locationData) return;
 
     const exportEndpoint = exportEndpointMap[activePrompt] ?? "/api/export-pdf/";
+
+    // showSaveFilePicker must run while a user gesture is still active. Awaiting fetch() first
+    // consumes that activation, which causes SecurityError. For detailed PDF, open the picker
+    // before the network request, then stream or write the blob to the chosen handle.
+    let saveFileHandle = null;
+    const canUseSavePicker =
+      activePrompt === 3 && typeof window.showSaveFilePicker === "function";
+
+    if (canUseSavePicker) {
+      const regionSlug =
+        String(locationData.region_name || "report")
+          .trim()
+          .replace(/\s+/g, "_")
+          .replace(/[^\w.-]/g, "")
+          .slice(0, 120) || "report";
+      const pickerSuggestedName = `${regionSlug}_Detailed_Bee_Plant_Report.pdf`;
+      try {
+        saveFileHandle = await window.showSaveFilePicker({
+          suggestedName: pickerSuggestedName,
+          types: [
+            {
+              description: "Report export",
+              accept: { "application/pdf": [".pdf"] },
+            },
+          ],
+        });
+      } catch (pickErr) {
+        if (pickErr?.name === "AbortError") return;
+        saveFileHandle = null;
+      }
+    }
+
+    // Same bee animation as query loading: prompt 1 always; prompt 3 only for classic
+    // blob + <a download> (no file picker / streaming path).
+    const showExportBeeLoader =
+      activePrompt === 1 || (activePrompt === 3 && saveFileHandle == null);
+    if (showExportBeeLoader) {
+      setExportLoading(true);
+    }
 
     try {
       const response = await fetch(`${API_BASE}${exportEndpoint}`, {
@@ -41,32 +101,75 @@ const DataDisplay = ({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to export PDF");
+        throw new Error("Failed to export report file");
+      }
+
+      const disposition = response.headers.get("Content-Disposition");
+      const contentType = response.headers.get("Content-Type") || "";
+      let fallbackName = contentType.includes("zip") ? "export.zip" : "export.pdf";
+      const filename = parseContentDispositionFilename(disposition, fallbackName);
+
+      const lenHeader = response.headers.get("Content-Length");
+      const contentLen = lenHeader ? parseInt(lenHeader, 10) : NaN;
+      const largeDownload =
+        Number.isFinite(contentLen) && contentLen > 8 * 1024 * 1024;
+
+      // Stream when we have a pre-opened handle and size is unknown/huge (avoids tab OOM on Blob).
+      const preferStreamToDisk =
+        saveFileHandle != null &&
+        response.body != null &&
+        (largeDownload || !Number.isFinite(contentLen));
+
+      if (preferStreamToDisk) {
+        try {
+          const writable = await saveFileHandle.createWritable();
+          await response.body.pipeTo(writable);
+          return;
+        } catch (streamErr) {
+          if (streamErr?.name === "AbortError") return;
+          console.error("Streamed export failed:", streamErr);
+          throw new Error(
+            "Could not save the file. If the download was large, try again or use Chrome/Edge."
+          );
+        }
       }
 
       const blob = await response.blob();
+
+      if (saveFileHandle != null) {
+        try {
+          const writable = await saveFileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (writeErr) {
+          console.error("Writing export to file failed:", writeErr);
+          throw new Error(
+            "Could not save the file. If the download was large, try again or use Chrome/Edge."
+          );
+        }
+      }
+
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      const disposition = response.headers.get("Content-Disposition");
-      let filename = "export.pdf"; // fallback
-
-      if (disposition && disposition.includes("filename=")) {
-        filename = disposition.split("filename=")[1].replace(/"/g, ""); // remove quotes if present
-      }
-
       link.download = filename;
       link.click();
 
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Export error:", error);
+    } finally {
+      if (showExportBeeLoader) {
+        setExportLoading(false);
+      }
     }
   };
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
+      <LoadingDialog isOpen={exportLoading} title="Preparing export…" />
       {/* data display area */}
       <Box
         flex="1"
@@ -194,7 +297,14 @@ const DataDisplay = ({
             </Box>
           );
         })()}
-        {locationData && activePrompt === 3 && <DetailedReportPanel data={locationData} />}
+        {locationData && activePrompt === 3 && (
+          <DetailedReportPanel
+            data={locationData}
+            apiBase={API_BASE}
+            selectedCoords={selectedCoords}
+            selectedRegion={selectedRegion}
+          />
+        )}
       </Box>
       <Flex gap="8px">
         <Button

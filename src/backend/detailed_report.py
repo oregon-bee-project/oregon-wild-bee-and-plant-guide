@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter
 
 
-def everySpeciesList (response, inat_key, df):
+def everySpeciesList(response, inat_key, df, bee_list_offset=0, bee_list_limit=None):
     # Stats key
     # numRows - All observations in filtered area
     # numUniqueBees - 
@@ -20,12 +20,20 @@ def everySpeciesList (response, inat_key, df):
         "beeList": []
     }
 
-    rows = df.to_dict(orient="records") or []
-    if not isinstance(rows, list):
-        rows = []
+    if df is None or df.empty:
+        stats["beeListTotal"] = 0
+        stats["beeListOffset"] = bee_list_offset if bee_list_limit is not None else 0
+        stats["beeListLimit"] = bee_list_limit
+        stats["beeListHasMore"] = False
+        response["response"] = stats
+        return
 
-    stats["numRows"] = len(rows)
-    if not rows:
+    stats["numRows"] = int(len(df.index))
+    if stats["numRows"] == 0:
+        stats["beeListTotal"] = 0
+        stats["beeListOffset"] = bee_list_offset if bee_list_limit is not None else 0
+        stats["beeListLimit"] = bee_list_limit
+        stats["beeListHasMore"] = False
         response["response"] = stats
         return
 
@@ -45,12 +53,12 @@ def everySpeciesList (response, inat_key, df):
     male_count = 0
     female_count = 0
 
-    for row in rows:
+    for row in df.itertuples(index=False):
         # Pollinator counts
-        bee_name = normalize_string(row.get("scientificName")) or normalize_string(row.get("specificEpithetVolDet"))
+        bee_name = normalize_string(getattr(row, "scientificName", None)) or normalize_string(getattr(row, "specificEpithetVolDet", None))
         
         # Sex counts
-        sex = normalize_string(row.get("sex"))
+        sex = normalize_string(getattr(row, "sex", None))
         s_lower = None
         if sex:
             s_lower = sex.lower()
@@ -60,7 +68,7 @@ def everySpeciesList (response, inat_key, df):
                 female_count += 1
 
         # Plant counts
-        plant_value = normalize_string(row.get("plantINatId"))
+        plant_value = normalize_string(getattr(row, "plantINatId", None))
         
         if plant_value:
             plant_counts[plant_value] += 1
@@ -89,7 +97,7 @@ def everySpeciesList (response, inat_key, df):
             if plant_value:
                 entry["plant_interactions"][plant_value] += 1
 
-            event_date = row.get("eventDate")
+            event_date = getattr(row, "eventDate", None)
             if event_date:
                 try:
                     dt = pd.to_datetime(str(event_date), errors='coerce')
@@ -124,10 +132,23 @@ def everySpeciesList (response, inat_key, df):
         except Exception:
             inat_dict = {}
 
-    # Build beeList
+    # Build beeList (optionally a slice for API pagination)
     sorted_species = sorted(species_stats.items(), key=lambda item: item[1]["count"], reverse=True)
+    total_bees = len(sorted_species)
+    stats["beeListTotal"] = total_bees
 
-    for bee, entry in sorted_species:
+    if bee_list_limit is None:
+        slice_species = sorted_species
+        stats["beeListOffset"] = 0
+        stats["beeListLimit"] = None
+        stats["beeListHasMore"] = False
+    else:
+        slice_species = sorted_species[bee_list_offset : bee_list_offset + bee_list_limit]
+        stats["beeListOffset"] = bee_list_offset
+        stats["beeListLimit"] = bee_list_limit
+        stats["beeListHasMore"] = (bee_list_offset + len(slice_species)) < total_bees
+
+    for bee, entry in slice_species:
         bee_obj = {
             "scientificName": bee,
             "count": entry["count"],
@@ -178,7 +199,8 @@ def heatmap_as_image(df):
     try:
         import plotly.express as px
         fig = heatmap(df)
-        return fig.to_image(format="png", width=1100, height=700, scale=2)
+        # scale=2 was very memory-heavy for large exports; keep PDFs smaller for browser downloads.
+        return fig.to_image(format="png", width=900, height=560, scale=1)
     except Exception:
         return None
 
@@ -191,8 +213,15 @@ def heatmap(df):
     """
     import plotly.express as px
 
-    lat_min, lat_max = df['decimalLatitude'].min(), df['decimalLatitude'].max()
-    lon_min, lon_max = df['decimalLongitude'].min(), df['decimalLongitude'].max()
+    plot_df = df.dropna(subset=["decimalLatitude", "decimalLongitude"])
+    if plot_df.empty:
+        plot_df = df
+    max_points = 5000
+    if len(plot_df.index) > max_points:
+        plot_df = plot_df.sample(n=max_points, random_state=42)
+
+    lat_min, lat_max = df["decimalLatitude"].min(), df["decimalLatitude"].max()
+    lon_min, lon_max = df["decimalLongitude"].min(), df["decimalLongitude"].max()
 
     center_lat = (lat_min + lat_max) / 2
     center_lon = (lon_min + lon_max) / 2
@@ -205,11 +234,11 @@ def heatmap(df):
     dynamic_radius = 150 / (zoom_level if zoom_level > 0 else 1)
 
     fig = px.density_mapbox(
-        df,
+        plot_df,
         lat='decimalLatitude',
         lon='decimalLongitude',
         radius=dynamic_radius,
-        range_color=[0, len(df) ** 0.5],
+        range_color=[0, max(len(plot_df) ** 0.5, 1)],
         center=dict(lat=center_lat, lon=center_lon),
         zoom=zoom_level,
         mapbox_style="open-street-map"

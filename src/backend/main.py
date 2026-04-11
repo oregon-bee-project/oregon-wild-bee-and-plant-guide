@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
 import get_best_plants as bp
@@ -68,7 +68,13 @@ def location_root(lat: float, long: float, region_type: str):
     return response_json
 
 @app.get("/api/detailed-report/")
-def detailed_report_root(lat: float, long: float, region_type: str):
+def detailed_report_root(
+    lat: float,
+    long: float,
+    region_type: str,
+    species_offset: int = Query(default=0, ge=0),
+    species_limit: int = Query(default=25, ge=1, le=100),
+):
     response_json = {
         "response": [],
         "region_type": region_type,
@@ -84,7 +90,13 @@ def detailed_report_root(lat: float, long: float, region_type: str):
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
 
-    dr.everySpeciesList(response_json, inat_key, filtered_df)
+    dr.everySpeciesList(
+        response_json,
+        inat_key,
+        filtered_df,
+        bee_list_offset=species_offset,
+        bee_list_limit=species_limit,
+    )
 
     return response_json
 
@@ -115,7 +127,12 @@ def export_detailed_pdf(payload: dict):
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
 
-    dr.everySpeciesList(response_json, inat_key, filtered_df)
+    dr.everySpeciesList(
+        response_json,
+        inat_key,
+        filtered_df,
+        bee_list_limit=None,
+    )
 
     stats = response_json.get("response", {})
 
