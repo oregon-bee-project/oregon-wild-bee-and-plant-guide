@@ -1,29 +1,40 @@
-import { Box, Button, Text, VStack, Flex } from "@chakra-ui/react";
+import {
+    Box,
+    Button,
+    Text,
+    VStack,
+    Portal,
+    Select,
+    Span,
+    Stack,
+    createListCollection,
+    Flex
+} from "@chakra-ui/react";
 import PromptItem from "./PromptItem";
-import { LuPlay } from "react-icons/lu";
+import { LuArrowRight } from "react-icons/lu";
 
-// Defined custom prompts
-const prompts = [
-  {
-    id: 1,
-    title: "Common Bees",
-    description: "What is the most common plant and bee in my area?",
-    state: "ready",
-  },
-  {
-    id: 2,
-    title: "Plants",
-    description: "What plants should I grow to support bees in my area?",
-    state: "ready",
-  },
-  {
-    id: 3,
-    title: "Detailed Summary Report",
-    description:
-      "Show me a detailed report of bee and plant species in my area",
-    state: "ready",
-  },
-];
+const prompts = createListCollection({
+  items: [
+    {
+      label: "Common Bees",
+      value: "bees",
+      description: "What is the most common plant and bee in my area?",
+      id: 1
+    },
+    {
+      label: "Best Plants",
+      value: "plants",
+      description: "What plants should I grow to support bees in my area?",
+      id: 2
+    },
+    {
+      label: "Detailed Summary Report",
+      value: "report",
+      description: "Show me a detailed report of bee and plant species in my area",
+      id: 3
+    },
+  ],
+})
 
 const PromptSidebar = ({
   display,
@@ -34,6 +45,22 @@ const PromptSidebar = ({
   onPromptSelect,
   showButton = true,
 }) => {
+
+  // Convert activePrompt id to select value
+  const getSelectedValue = () => {
+    const prompt = prompts.items.find(p => p.id === activePrompt)
+    return prompt ? [prompt.value] : []
+  }
+
+  // Handle select change
+  const handleSelectChange = (details) => {
+    const selectedValue = details.value[0]
+    const selectedPrompt = prompts.items.find(p => p.value === selectedValue)
+    if (selectedPrompt) {
+      setActivePrompt(selectedPrompt.id)
+    }
+  }
+
   return (
     <VStack spacing={0}>
       <Box
@@ -46,26 +73,42 @@ const PromptSidebar = ({
         flexDirection="column"
         justifyContent="space-between"
       >
-        {/* vertical stack of labels, input fields, buttons, etc. */}
         <VStack align="stretch" spacing={4}>
-          <Text>Prompts</Text>
-          {prompts.map((prompt) => (
-            <PromptItem
-              key={prompt.id}
-              title={prompt.title}
-              description={prompt.description}
-              selected={activePrompt === prompt.id}
-              onClick={() => {
-                if (prompt.state === "wip") {
-                  setErrorDialogMsg(
-                    "This prompt is still under construction. Check back soon!",
-                  );
-                  return;
-                }
-                setActivePrompt(prompt.id);
-              }}
-            />
-          ))}
+          <Text textStyle="xs">1) What information are you interested in?</Text>
+          <Select.Root
+            collection={prompts}
+            size="sm"
+            width="full"
+            value={getSelectedValue()}
+            onValueChange={handleSelectChange}
+          >
+            <Select.HiddenSelect />
+            <Select.Control>
+              <Select.Trigger>
+                <Select.ValueText placeholder="Select" />
+              </Select.Trigger>
+              <Select.IndicatorGroup>
+                <Select.Indicator />
+              </Select.IndicatorGroup>
+            </Select.Control>
+            <Portal>
+              <Select.Positioner>
+                <Select.Content>
+                  {prompts.items.map((prompt) => (
+                    <Select.Item item={prompt} key={prompt.value}>
+                      <Stack gap="0">
+                        <Select.ItemText>{prompt.label}</Select.ItemText>
+                        <Span color="fg.muted" textStyle="xs">
+                          {prompt.description}
+                        </Span>
+                      </Stack>
+                      <Select.ItemIndicator />
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Portal>
+          </Select.Root>
         </VStack>
       </Box>
       {showButton && (
@@ -75,13 +118,11 @@ const PromptSidebar = ({
           _hover={{ bg: "green.500" }}
           isDisabled={!activePrompt}
           onClick={() => {
-            const selected = prompts.find((p) => p.id === activePrompt);
-            console.log("Selected prompt:", selected);
             fetchLocationData();
             onPromptSelect?.(); // Close drawer on mobile after running prompt
           }}
         >
-          <LuPlay /> Run Selected Prompt
+            Explore the data <LuArrowRight />
         </Button>
       )}
     </VStack>
