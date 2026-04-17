@@ -126,16 +126,15 @@ const DataDisplay = ({
                           <Flex
                             direction={{ base: "column", md: "row" }}
                             align={{ base: "stretch", md: "flex-start" }}
-                            minH={{ base: "auto", md: "220px" }}
                           >
                             {iNatURL ? (
-                              <Box flex={1} h={{ base: "200px", md: "220px" }} flexShrink={0} bg="green.50" overflow="hidden">
+                              <Box flex={1} flexShrink={0} bg="green.50">
                                 <ImageLightbox src={iNatURL} alt={commonName}>
                                   <Image
                                     src={iNatURL}
                                     alt={commonName}
                                     width="100%"
-                                    height="100%"
+                                    maxH="300px"
                                     objectFit="contain"
                                     display="block"
                                   />
