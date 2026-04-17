@@ -8,6 +8,7 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import { LuInfo } from "react-icons/lu";
+import ImageLightbox from "./ImageLightbox";
 
 const BeeStatsPanel = ({ data }) => {
   if (!data || !data.response) return null;
@@ -113,16 +114,16 @@ const BeeStatsPanel = ({ data }) => {
             )}
 
             {mostCommonPlant.iNatURL && (
-              <Image
-                src={mostCommonPlant.iNatURL}
-                alt={
-                  mostCommonPlant.commonName || mostCommonPlant.iNatTaxonName
-                }
-                borderRadius="xl"
-                mt={4}
-                maxH="200px"
-                objectFit="cover"
-              />
+              <ImageLightbox src={mostCommonPlant.iNatURL} alt={mostCommonPlant.commonName || mostCommonPlant.iNatTaxonName}>
+                <Image
+                  src={mostCommonPlant.iNatURL}
+                  alt={mostCommonPlant.commonName || mostCommonPlant.iNatTaxonName}
+                  borderRadius="xl"
+                  mt={4}
+                  maxH="200px"
+                  objectFit="cover"
+                />
+              </ImageLightbox>
             )}
           </Box>
         </Flex>

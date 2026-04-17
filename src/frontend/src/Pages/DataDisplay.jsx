@@ -2,6 +2,7 @@ import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@ch
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
+import ImageLightbox from "../CustomComponents/ImageLightbox";
 
 const DataDisplay = ({
   locationData,
@@ -129,14 +130,16 @@ const DataDisplay = ({
                           >
                             {iNatURL ? (
                               <Box flex={1} h={{ base: "200px", md: "220px" }} flexShrink={0} bg="green.50" overflow="hidden">
-                                <Image
-                                  src={iNatURL}
-                                  alt={commonName}
-                                  width="100%"
-                                  height="100%"
-                                  objectFit="contain"
-                                  display="block"
-                                />
+                                <ImageLightbox src={iNatURL} alt={commonName}>
+                                  <Image
+                                    src={iNatURL}
+                                    alt={commonName}
+                                    width="100%"
+                                    height="100%"
+                                    objectFit="contain"
+                                    display="block"
+                                  />
+                                </ImageLightbox>
                               </Box>
                             ) : null}
                             <Box

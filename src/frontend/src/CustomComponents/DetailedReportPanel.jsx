@@ -10,6 +10,7 @@ import {
   Badge,
 } from "@chakra-ui/react";
 import { LuInfo } from "react-icons/lu";
+import ImageLightbox from "./ImageLightbox";
 
 const SEASON_COLORS = {
   Spring: "green",
@@ -105,14 +106,16 @@ const BeeCard = ({ bee }) => {
             {topPlants.map((plant, idx) => (
               <Flex key={idx} align="center" gap={2}>
                 {plant.image && (
-                  <Image
-                    src={plant.image}
-                    alt={plant.commonName || plant.scientificName}
-                    boxSize="36px"
-                    objectFit="cover"
-                    borderRadius="md"
-                    flexShrink={0}
-                  />
+                  <ImageLightbox src={plant.image} alt={plant.commonName || plant.scientificName}>
+                    <Image
+                      src={plant.image}
+                      alt={plant.commonName || plant.scientificName}
+                      boxSize="36px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      flexShrink={0}
+                    />
+                  </ImageLightbox>
                 )}
                 <Flex flex="1" minW={0} align="baseline" gap={2} wrap="wrap">
                   {(() => {
