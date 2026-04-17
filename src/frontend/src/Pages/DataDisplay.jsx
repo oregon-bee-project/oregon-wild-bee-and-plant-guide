@@ -112,14 +112,16 @@ const DataDisplay = ({
                           overflow="hidden"
                           pb={4}
                         >
-                          <Text fontSize="md" fontWeight="bold" px={3} pt={3} noOfLines={2}>
-                            {commonName}
-                          </Text>
-                          {iNatTaxonName ? (
-                            <Text fontStyle="italic" color="gray.600" fontSize="sm" px={3} pb={2} noOfLines={1}>
-                              {iNatTaxonName}
+                          <Flex align="baseline" gap={2} wrap="wrap" px={3} pt={3} pb={iNatTaxonName && iNatTaxonName !== commonName ? 0 : 2}>
+                            <Text fontSize="lg" fontWeight="bold" fontStyle={commonName === iNatTaxonName ? "italic" : "normal"} noOfLines={2}>
+                              {commonName}
                             </Text>
-                          ) : null}
+                            {iNatTaxonName && iNatTaxonName !== commonName ? (
+                              <Text fontStyle="italic" color="gray.600" fontSize="md" noOfLines={1}>
+                                {iNatTaxonName}
+                              </Text>
+                            ) : null}
+                          </Flex>
                           <Flex
                             direction={{ base: "column", md: "row" }}
                             align={{ base: "stretch", md: "flex-start" }}

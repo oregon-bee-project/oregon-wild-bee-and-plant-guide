@@ -70,6 +70,8 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
     common_plant_count = None
     cp_top_bees = None
 
+    common_plant_sci = None
+
     for row in rows:
         metric = row.get("Metric")
         value = row.get("Value")
@@ -83,6 +85,8 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
             common_bees = value
         elif metric == "mostCommonPlant.commonName":
             common_plant = value
+        elif metric == "mostCommonPlant.iNatTaxonName":
+            common_plant_sci = value
         elif metric == "mostCommonPlant.count":
             common_plant_count = value
         elif metric == "mostCommonPlant.topBees":
@@ -109,7 +113,10 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
     elements.append(Paragraph("Most Frequently Observed Plant", s["Heading2"]))
     elements.append(Spacer(1, 6))
     if common_plant is not None:
-        elements.append(Paragraph(f"<b>Most Frequently Observed Plant:</b> {common_plant}", body_style))
+        plant_label = common_plant
+        if common_plant_sci and common_plant_sci != common_plant:
+            plant_label = f"{common_plant} (<i>{common_plant_sci}</i>)"
+        elements.append(Paragraph(f"<b>Most Frequently Observed Plant:</b> {plant_label}", body_style))
         elements.append(Spacer(1, 12))
     if common_plant_count is not None:
         elements.append(Paragraph(f"<b>Number of Observations of {common_plant}:</b> {common_plant_count}", body_style))

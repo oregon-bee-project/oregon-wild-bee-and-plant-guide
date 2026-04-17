@@ -79,16 +79,23 @@ const BeeStatsPanel = ({ data }) => {
             <Heading size="sm" mb={2}>
               🌿 Most Common Plant
             </Heading>
-            <Text fontSize="lg" fontWeight="bold">
-              {mostCommonPlant.commonName ||
-                mostCommonPlant.iNatTaxonName ||
-                "N/A"}
-            </Text>
-            {mostCommonPlant.iNatTaxonName && (
-              <Text fontStyle="italic" color="gray.600">
-                {mostCommonPlant.iNatTaxonName}
-              </Text>
-            )}
+            {(() => {
+              const displayName = mostCommonPlant.commonName || mostCommonPlant.iNatTaxonName || "N/A";
+              const isScientific = !mostCommonPlant.commonName || mostCommonPlant.commonName === mostCommonPlant.iNatTaxonName;
+              const showSci = mostCommonPlant.iNatTaxonName && mostCommonPlant.commonName && mostCommonPlant.commonName !== mostCommonPlant.iNatTaxonName;
+              return (
+                <Flex align="baseline" gap={2} wrap="wrap">
+                  <Text fontSize="lg" fontWeight="bold" fontStyle={isScientific ? "italic" : "normal"}>
+                    {displayName}
+                  </Text>
+                  {showSci && (
+                    <Text fontStyle="italic" color="gray.600" fontSize="md">
+                      {mostCommonPlant.iNatTaxonName}
+                    </Text>
+                  )}
+                </Flex>
+              );
+            })()}
             <Text mt={2}>Observed Interactions: {mostCommonPlant.count}</Text>
 
             {mostCommonPlant.topBees?.length > 0 && (

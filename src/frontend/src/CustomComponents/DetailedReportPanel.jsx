@@ -114,16 +114,22 @@ const BeeCard = ({ bee }) => {
                     flexShrink={0}
                   />
                 )}
-                <Box flex="1" minW={0}>
-                  <Text fontSize="sm" fontWeight="semibold" noOfLines={1}>
-                    {plant.commonName || plant.scientificName || `Plant #${plant.plantINatId}`}
-                  </Text>
-                  {plant.scientificName && plant.commonName && (
-                    <Text fontSize="xs" fontStyle="italic" color="gray.500" noOfLines={1}>
+                <Flex flex="1" minW={0} align="baseline" gap={2} wrap="wrap">
+                  {(() => {
+                    const displayName = plant.commonName || plant.scientificName || `Plant #${plant.plantINatId}`;
+                    const isScientific = !plant.commonName || plant.commonName === plant.scientificName;
+                    return (
+                      <Text fontSize="md" fontWeight="semibold" fontStyle={isScientific ? "italic" : "normal"} noOfLines={1}>
+                        {displayName}
+                      </Text>
+                    );
+                  })()}
+                  {plant.scientificName && plant.commonName && plant.commonName !== plant.scientificName && (
+                    <Text fontSize="sm" fontStyle="italic" color="gray.500" noOfLines={1}>
                       {plant.scientificName}
                     </Text>
                   )}
-                </Box>
+                </Flex>
                 <Badge colorScheme="green" flexShrink={0}>{plant.count}</Badge>
               </Flex>
             ))}
