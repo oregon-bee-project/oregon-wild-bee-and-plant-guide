@@ -13,7 +13,7 @@ const beeAnimation = keyframes`
   }
 `;
 
-const LoadingDialog = ({ isOpen }) => {
+const LoadingDialog = ({ isOpen, title = "Running Prompt..." }) => {
     return (
         <Dialog.Root
             open={isOpen}
@@ -37,7 +37,7 @@ const LoadingDialog = ({ isOpen }) => {
                                 </Text>
                             </Box>
                             <Dialog.Title fontSize="lg" fontWeight="medium">
-                                Running Prompt...
+                                {title}
                             </Dialog.Title>
                         </Dialog.Body>
                     </Dialog.Content>

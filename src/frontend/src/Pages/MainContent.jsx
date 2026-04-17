@@ -80,6 +80,8 @@ const MainContent = () => {
           lat: selectedCoords.lat,
           long: selectedCoords.lng,
           region_type: selectedRegion.toLowerCase(),
+          species_offset: "0",
+          species_limit: "25",
         });
         const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
         if (!res.ok) {
