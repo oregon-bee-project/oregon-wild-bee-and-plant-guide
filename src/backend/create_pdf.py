@@ -25,6 +25,33 @@ def _make_styles():
     return s, body, bold_body, small, center
 
 
+_DISCLAIMER_TEXT = (
+    "Keep in mind that data has been recorded since 2017 and some areas have "
+    "more observations than others, so a region with fewer total records may "
+    "not fully represent all the bees and plants that live there."
+)
+
+
+def _build_context_block(description, styles):
+    """Return a list of flowables with a context blurb and disclaimer for the top of a report."""
+    s = styles
+    context_style = ParagraphStyle(
+        "PdfContext", parent=s["BodyText"], fontSize=9, leading=13,
+        textColor=colors.HexColor("#333333"), wordWrap="CJK",
+    )
+    disclaimer_style = ParagraphStyle(
+        "PdfDisclaimer", parent=s["BodyText"], fontSize=9, leading=13,
+        textColor=colors.orangered, fontName="Helvetica-Oblique", wordWrap="CJK",
+        backColor=colors.HexColor("#FFF7ED"), borderPadding=6,
+    )
+    elements = []
+    elements.append(Paragraph(description, context_style))
+    elements.append(Spacer(1, 6))
+    elements.append(Paragraph(_DISCLAIMER_TEXT, disclaimer_style))
+    elements.append(Spacer(1, 16))
+    return elements
+
+
 def format_common_bees(bees, body_style):
     items = []
     for bee in bees:
@@ -60,6 +87,14 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
     # Title
     elements.append(Paragraph(f"{title} — {location}", s["Title"]))
     elements.append(Spacer(1, 12))
+
+    elements.extend(_build_context_block(
+        "This summary shows the most commonly observed bees and plants in your selected area. "
+        "The data comes from real observations recorded by bee researchers and community scientists "
+        "across Oregon. An observation is a single recorded instance of a bee being found on a "
+        "specific plant.",
+        s,
+    ))
 
     # Extract data
     num_rows_value = None
@@ -207,6 +242,14 @@ def generate_detailed_pdf(stats, title="Detailed Bee and Plant Report", location
                 doc_elements.append(PageBreak())
         except Exception:
             pass
+
+    # --- Context block ---
+    doc_elements.extend(_build_context_block(
+        "This report lists every bee species observed in your selected area. The data comes from "
+        "real observations recorded by bee researchers and community scientists across Oregon. "
+        "An observation is a single recorded instance of a bee being found on a specific plant.",
+        s,
+    ))
 
     # --- Species detail pages ---
     h2_style = s["Heading2"]

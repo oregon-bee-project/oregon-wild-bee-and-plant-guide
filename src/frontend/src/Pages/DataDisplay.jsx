@@ -3,6 +3,7 @@ import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
 import ImageLightbox from "../CustomComponents/ImageLightbox";
+import DataContextInfo from "../CustomComponents/DataContextInfo";
 
 const DataDisplay = ({
   locationData,
@@ -86,7 +87,16 @@ const DataDisplay = ({
             ? plants.reduce((sum, p) => sum + (Number(p?.score) || 0), 0)
             : 0;
           return (
-            <Box bg="white" p={{ base: 3, md: 5 }} borderRadius="xl" boxShadow="md" width="100%" maxW="100%">
+            <Box bg="white" p={{ base: 3, md: 5 }} borderRadius="xl" boxShadow="md" width="100%" maxW="100%" pos="relative">
+              <Box pos="absolute" top={2} left={2}>
+                <DataContextInfo title="About These Plant Recommendations" defaultOpen>
+                  <Text>These are the top 5 plants recommended for your area to help support local bee populations. The recommendations are generated using a prediction model trained on thousands of real bee-plant interactions observed by bee researchers and community scientists across Oregon.</Text>
+                  <Text>Only plants found in the <strong>Oregon Flora</strong> native plant database are included, so these should be safe and beneficial to plant in Oregon.</Text>
+                  <Text>The <strong>interaction share percentage</strong> gives a sense of how much each plant contributes to supporting bees compared to the others in this list. A higher percentage means that plant is predicted to attract a wider variety or greater number of local bees.</Text>
+                  <Text><strong>Top bees this plant supports</strong> shows which bee species in your area are most likely to visit each plant. You can click any plant image to see a larger photo.</Text>
+                  <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Keep in mind that data has been recorded since 2017 and some areas have more observations than others, so a region with fewer total records may not fully represent all the bees and plants that live there.</Text>
+                </DataContextInfo>
+              </Box>
               <VStack spacing={4} align="stretch">
                 <Heading size="md" textAlign="center">
                   {locationData.region_name || "Best plants to support bees in your area"}

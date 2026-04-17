@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Flex,
   Text,
@@ -9,6 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { LuInfo } from "react-icons/lu";
 import ImageLightbox from "./ImageLightbox";
+import DataContextInfo from "./DataContextInfo";
 
 const BeeStatsPanel = ({ data }) => {
   if (!data || !data.response) return null;
@@ -23,9 +25,17 @@ const BeeStatsPanel = ({ data }) => {
   } = response;
 
   return (
-    <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%">
+    <Box bg="white" p={{ base: 4, md: 6 }} borderRadius="2xl" boxShadow="lg" width="100%" pos="relative">
+      <Box pos="absolute" top={2} left={2}>
+        <DataContextInfo title="About This Summary" defaultOpen>
+          <Text>This summary shows the most commonly observed bees and plants in your selected area. The data comes from real observations recorded by bee researchers and community scientists across Oregon.</Text>
+          <Text>An <strong>observation</strong> is a single recorded instance of a bee being found on a specific plant. The "obs." numbers you see throughout this page represent how many times that bee or plant was recorded — a higher number means it was spotted more frequently.</Text>
+          <Text><strong>Most Common Bees</strong> lists the top 5 bee species seen most often in this area. Bees are listed by their scientific names (for example, <em>Osmia</em> is a genus of mason bees).</Text>
+          <Text><strong>Most Common Plant</strong> highlights which flowering plant was visited by bees more than any other in this area, along with which bee species visit it most.</Text>
+          <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Keep in mind that data has been recorded since 2017 and some areas have more observations than others, so a region with fewer total records may not fully represent all the bees and plants that live there.</Text>
+        </DataContextInfo>
+      </Box>
       <VStack spacing={{ base: 4, md: 6 }} align="stretch">
-        {/* Region Header */}
         <Heading size="lg" textAlign="center">
           {region_name}
         </Heading>
@@ -67,9 +77,9 @@ const BeeStatsPanel = ({ data }) => {
             </Heading>
             <VStack align="stretch" spacing={2}>
               {mostCommonBees?.map((bee, idx) => (
-                <Flex key={idx} justify="space-between">
+                <Flex key={idx} justify="space-between" align="center">
                   <Text fontStyle="italic" fontWeight="bold">{bee.scientificName}</Text>
-                  <Text>{bee.count}</Text>
+                  <Badge colorScheme="purple">{bee.count} obs.</Badge>
                 </Flex>
               ))}
             </VStack>
@@ -101,12 +111,12 @@ const BeeStatsPanel = ({ data }) => {
 
             {mostCommonPlant.topBees?.length > 0 && (
               <Box mt={3}>
-                <Text fontWeight="bold" fontSize="sm" mb={1}>Top Visitors:</Text>
+                <Text fontWeight="bold" fontSize="sm" mb={1}>Top Bee Visitors:</Text>
                 <VStack align="stretch" spacing={1}>
                   {mostCommonPlant.topBees.map((bee, idx) => (
-                    <Flex key={idx} justify="space-between" fontSize="sm">
+                    <Flex key={idx} justify="space-between" align="center" fontSize="sm">
                       <Text fontStyle="italic">{bee.scientificName}</Text>
-                      <Text>{bee.count}</Text>
+                      <Badge colorScheme="purple">{bee.count} obs. with this plant</Badge>
                     </Flex>
                   ))}
                 </VStack>
