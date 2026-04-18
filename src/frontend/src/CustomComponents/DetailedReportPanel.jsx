@@ -1,5 +1,7 @@
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Box,
+  Button,
   Flex,
   Text,
   Image,
@@ -8,23 +10,19 @@ import {
   HStack,
   Heading,
   Badge,
+  Spinner,
 } from "@chakra-ui/react";
 import { LuInfo } from "react-icons/lu";
 import ImageLightbox from "./ImageLightbox";
 import DataContextInfo from "./DataContextInfo";
 
-const SEASON_COLORS = {
-  Spring: "green",
-  Summer: "yellow",
-  Fall:   "orange",
-  Winter: "blue",
-};
+const SPECIES_PAGE_SIZE = 25;
 
 const SeasonBar = ({ springCount, summerCount, fallCount, winterCount }) => {
   const seasons = [
     { label: "Spr", count: springCount, color: "green.400" },
     { label: "Sum", count: summerCount, color: "yellow.400" },
-    { label: "Fall", count: fallCount,  color: "orange.400" },
+    { label: "Fall", count: fallCount, color: "orange.400" },
     { label: "Win", count: winterCount, color: "blue.300" },
   ];
   const total = seasons.reduce((acc, s) => acc + s.count, 0);
@@ -87,7 +85,9 @@ const BeeCard = ({ bee }) => {
             {femaleCount > 0 && <Badge colorScheme="pink">♀ {femaleCount}</Badge>}
           </HStack>
           <Box mt={2}>
-            <Text fontSize="xs" color="gray.500" mb={1}>Seasonal activity</Text>
+            <Text fontSize="xs" color="gray.500" mb={1}>
+              Seasonal activity
+            </Text>
             <SeasonBar
               springCount={springCount}
               summerCount={summerCount}
@@ -115,6 +115,8 @@ const BeeCard = ({ bee }) => {
                       objectFit="cover"
                       borderRadius="md"
                       flexShrink={0}
+                      loading="lazy"
+                      decoding="async"
                     />
                   </ImageLightbox>
                 )}
@@ -144,7 +146,117 @@ const BeeCard = ({ bee }) => {
   );
 };
 
-const DetailedReportPanel = ({ data }) => {
+const DetailedReportPanel = ({
+  data,
+  apiBase = "",
+  selectedCoords,
+  selectedRegion,
+}) => {
+  const [accumulatedBees, setAccumulatedBees] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+
+  const sentinelRef = useRef(null);
+  const hasMoreRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  const accumulatedBeesRef = useRef([]);
+  const regionKeyRef = useRef("");
+
+  const regionKey = useMemo(() => {
+    if (!data) return "";
+    return `${data.lat}|${data.long}|${data.region_type}|${data.region_name}`;
+  }, [data?.lat, data?.long, data?.region_type, data?.region_name]);
+
+  useEffect(() => {
+    regionKeyRef.current = regionKey;
+  }, [regionKey]);
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore;
+  }, [loadingMore]);
+
+  useEffect(() => {
+    accumulatedBeesRef.current = accumulatedBees;
+  }, [accumulatedBees]);
+
+  useEffect(() => {
+    if (!data?.response) return;
+    const list = Array.isArray(data.response.beeList) ? data.response.beeList : [];
+    setAccumulatedBees(list);
+    setHasMore(Boolean(data.response.beeListHasMore));
+    setLoadError(null);
+  }, [data, regionKey]);
+
+  const loadNextPage = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    const lat = selectedCoords?.lat;
+    const lng = selectedCoords?.lng;
+    if (lat === "" || lng === "" || lat == null || lng == null) return;
+    if (!selectedRegion) return;
+
+    const keyAtStart = regionKeyRef.current;
+    const offset = accumulatedBeesRef.current.length;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    setLoadError(null);
+
+    try {
+      const params = new URLSearchParams({
+        lat: String(lat),
+        long: String(lng),
+        region_type: String(selectedRegion).toLowerCase(),
+        species_offset: String(offset),
+        species_limit: String(SPECIES_PAGE_SIZE),
+      });
+      const res = await fetch(`${apiBase}/api/detailed-report/?${params.toString()}`);
+      if (!res.ok) {
+        let detail = "Request failed";
+        try {
+          const errJson = await res.json();
+          detail = errJson.detail ?? detail;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(detail);
+      }
+      const json = await res.json();
+      if (regionKeyRef.current !== keyAtStart) return;
+      const next = Array.isArray(json.response?.beeList) ? json.response.beeList : [];
+      setAccumulatedBees((prev) => [...prev, ...next]);
+      setHasMore(Boolean(json.response?.beeListHasMore));
+    } catch (e) {
+      setLoadError(e?.message || "Failed to load more species");
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [apiBase, selectedCoords, selectedRegion]);
+
+  const loadNextPageRef = useRef(loadNextPage);
+  loadNextPageRef.current = loadNextPage;
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !data?.response) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        if (!hasMoreRef.current || loadingMoreRef.current) return;
+        loadNextPageRef.current();
+      },
+      { root: null, rootMargin: "160px", threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [data, regionKey]);
+
   if (!data || !data.response) return null;
 
   const { response, region_type, region_name, lat, long } = data;
@@ -154,8 +266,12 @@ const DetailedReportPanel = ({ data }) => {
     numUniquePlants,
     totalMales,
     totalFemales,
-    beeList,
+    beeListTotal,
   } = response;
+
+  const totalListed =
+    typeof beeListTotal === "number" ? beeListTotal : accumulatedBees.length;
+  const remaining = Math.max(0, totalListed - accumulatedBees.length);
 
   return (
     <Box p={{ base: 4, md: 6 }} width="100%" pos="relative">
@@ -177,32 +293,64 @@ const DetailedReportPanel = ({ data }) => {
           Detailed Bee & Plant Species Report
         </Text>
 
-        {/* Summary stats */}
         <SimpleGrid columns={{ base: 2, md: 5 }} spacing={3}>
           {[
-            { label: "Total Records",       value: numRows?.toLocaleString() },
-            { label: "Bee Species",          value: numUniqueBees },
-            { label: "Plant Species",        value: numUniquePlants },
-            { label: "Males Observed",       value: totalMales },
-            { label: "Females Observed",     value: totalFemales },
+            { label: "Total Records", value: numRows?.toLocaleString() },
+            { label: "Bee Species", value: numUniqueBees },
+            { label: "Plant Species", value: numUniquePlants },
+            { label: "Males Observed", value: totalMales },
+            { label: "Females Observed", value: totalFemales },
           ].map(({ label, value }) => (
             <Box key={label} p={3} borderRadius="xl" boxShadow="sm" bg="gray.50">
-              <Text fontWeight="bold" fontSize="xs" color="gray.500">{label}</Text>
-              <Text fontSize="xl" fontWeight="semibold">{value ?? "—"}</Text>
+              <Text fontWeight="bold" fontSize="xs" color="gray.500">
+                {label}
+              </Text>
+              <Text fontSize="xl" fontWeight="semibold">
+                {value ?? "—"}
+              </Text>
             </Box>
           ))}
         </SimpleGrid>
 
-        {/* Bee species list */}
         <Box>
           <Heading size="sm" mb={3}>
-            All Bee Species ({beeList?.length ?? 0})
+            All Bee Species ({totalListed})
           </Heading>
+          {remaining > 0 && (
+            <Text fontSize="sm" color="gray.600" mb={2}>
+              Showing {accumulatedBees.length} of {totalListed}. Scroll down to load more.
+            </Text>
+          )}
           <VStack align="stretch" spacing={3}>
-            {beeList?.map((bee, idx) => (
-              <BeeCard key={idx} bee={bee} />
+            {accumulatedBees.map((bee, idx) => (
+              <BeeCard
+                key={bee.scientificName ? `${bee.scientificName}-${idx}` : idx}
+                bee={bee}
+              />
             ))}
           </VStack>
+
+          <Box ref={sentinelRef} minH="1px" aria-hidden="true" />
+
+          {loadError && (
+            <Text fontSize="sm" color="red.600" mt={2}>
+              {loadError}
+            </Text>
+          )}
+
+          <Flex mt={4} align="center" justify="center" gap={3} direction="column">
+            {loadingMore && <Spinner size="sm" color="green.500" />}
+            {hasMore && !loadingMore && (
+              <Button
+                width="100%"
+                variant="outline"
+                colorScheme="green"
+                onClick={() => loadNextPage()}
+              >
+                Load more ({remaining} remaining)
+              </Button>
+            )}
+          </Flex>
         </Box>
 
         <Flex align="center" justify="center" gap={2} color="gray.500" fontSize="xs" mt={2}>
