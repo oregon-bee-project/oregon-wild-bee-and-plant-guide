@@ -215,11 +215,15 @@ def summary_stats(response, inat_key, df):
                     taxon_name = normalize_string(inat_key.loc[row_mask, "scientificName"].iloc[0]) or ""
                 if not taxon_name and "name" in inat_key.columns:
                     taxon_name = normalize_string(inat_key.loc[row_mask, "name"].iloc[0]) or ""
+                if not taxon_name and "iNaturalistTaxonName" in inat_key.columns:
+                    taxon_name = normalize_string(inat_key.loc[row_mask, "iNaturalistTaxonName"].iloc[0]) or ""
                 if "iNaturalistTaxonImage" in inat_key.columns:
                     plant_image_url = normalize_string(inat_key.loc[row_mask, "iNaturalistTaxonImage"].iloc[0]) or ""
 
             if not common_name:
-                continue  # skip plants without a name
+                common_name = taxon_name
+            if not common_name:
+                continue
 
             stats["mostCommonPlant"]["count"] = count
             stats["mostCommonPlant"]["commonName"] = common_name

@@ -13,6 +13,8 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { LuInfo } from "react-icons/lu";
+import ImageLightbox from "./ImageLightbox";
+import DataContextInfo from "./DataContextInfo";
 
 const SPECIES_PAGE_SIZE = 25;
 
@@ -105,30 +107,36 @@ const BeeCard = ({ bee }) => {
             {topPlants.map((plant, idx) => (
               <Flex key={idx} align="center" gap={2}>
                 {plant.image && (
-                  <Image
-                    src={plant.image}
-                    alt={plant.commonName || plant.scientificName}
-                    boxSize="36px"
-                    objectFit="cover"
-                    borderRadius="md"
-                    flexShrink={0}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <ImageLightbox src={plant.image} alt={plant.commonName || plant.scientificName}>
+                    <Image
+                      src={plant.image}
+                      alt={plant.commonName || plant.scientificName}
+                      boxSize="36px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      flexShrink={0}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </ImageLightbox>
                 )}
-                <Box flex="1" minW={0}>
-                  <Text fontSize="sm" fontWeight="semibold" noOfLines={1}>
-                    {plant.commonName || plant.scientificName || `Plant #${plant.plantINatId}`}
-                  </Text>
-                  {plant.scientificName && plant.commonName && (
-                    <Text fontSize="xs" fontStyle="italic" color="gray.500" noOfLines={1}>
+                <Flex flex="1" minW={0} align="baseline" gap={2} wrap="wrap">
+                  {(() => {
+                    const displayName = plant.commonName || plant.scientificName || `Plant #${plant.plantINatId}`;
+                    const isScientific = !plant.commonName || plant.commonName === plant.scientificName;
+                    return (
+                      <Text fontSize="md" fontWeight="semibold" fontStyle={isScientific ? "italic" : "normal"} noOfLines={1}>
+                        {displayName}
+                      </Text>
+                    );
+                  })()}
+                  {plant.scientificName && plant.commonName && plant.commonName !== plant.scientificName && (
+                    <Text fontSize="sm" fontStyle="italic" color="gray.500" noOfLines={1}>
                       {plant.scientificName}
                     </Text>
                   )}
-                </Box>
-                <Badge colorScheme="green" flexShrink={0}>
-                  {plant.count}
-                </Badge>
+                </Flex>
+                <Badge colorScheme="green" flexShrink={0}>{plant.count} obs. with this bee</Badge>
               </Flex>
             ))}
           </VStack>
@@ -266,7 +274,17 @@ const DetailedReportPanel = ({
   const remaining = Math.max(0, totalListed - accumulatedBees.length);
 
   return (
-    <Box p={{ base: 4, md: 6 }} width="100%">
+    <Box p={{ base: 4, md: 6 }} width="100%" pos="relative">
+      <Box pos="absolute" top={2} left={2}>
+        <DataContextInfo title="About This Detailed Report" defaultOpen>
+          <Text>This report lists every bee species that has been observed in your selected area. The data comes from real observations recorded by bee researchers and community scientists across Oregon.</Text>
+          <Text>An <strong>observation</strong> is a single recorded instance of a bee being found on a specific plant. The "obs." numbers you see throughout this page represent how many times that bee or plant was recorded — a higher number means it was spotted more frequently.</Text>
+          <Text>For each bee you can see how many times it was observed, the breakdown of <strong>males</strong> and <strong>females</strong>, and a <strong>seasonal activity bar</strong> showing which seasons it is most active (Spring, Summer, Fall, or Winter).</Text>
+          <Text><strong>Top Plants Visited</strong> shows which flowering plants that bee was most often found on. You can click any plant image to see a larger photo.</Text>
+          <Text>This information can help you understand what each bee species needs and which plants to grow if you want to attract specific bees to your area.</Text>
+          <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Keep in mind that data has been recorded since 2017 and some areas have more observations than others, so a region with fewer total records may not fully represent all the bees and plants that live there.</Text>
+        </DataContextInfo>
+      </Box>
       <VStack spacing={{ base: 4, md: 6 }} align="stretch">
         <Heading size="lg" textAlign="center">
           {region_name}

@@ -162,7 +162,6 @@ def everySpeciesList(response, inat_key, df, bee_list_offset=0, bee_list_limit=N
         }
         
         for plant_id, p_count in entry["plant_interactions"].most_common(5):
-            # Resolve plant info
             common_name = ""
             taxon_name = ""
             image_url = ""
@@ -172,14 +171,21 @@ def everySpeciesList(response, inat_key, df, bee_list_offset=0, bee_list_limit=N
                 if p_id_int in inat_dict:
                     info = inat_dict[p_id_int]
                     common_name = normalize_string(info.get("commonName")) or ""
-                    taxon_name = normalize_string(info.get("scientificName")) or normalize_string(info.get("name")) or ""
+                    taxon_name = (
+                        normalize_string(info.get("scientificName"))
+                        or normalize_string(info.get("name"))
+                        or normalize_string(info.get("iNaturalistTaxonName"))
+                        or ""
+                    )
                     image_url = normalize_string(info.get("iNaturalistTaxonImage")) or ""
             except (ValueError, TypeError):
                 pass
+
+            display_name = common_name or taxon_name
             
             bee_obj["topPlants"].append({
                 "plantINatId": plant_id,
-                "commonName": common_name,
+                "commonName": display_name,
                 "scientificName": taxon_name,
                 "count": p_count,
                 "image": image_url
