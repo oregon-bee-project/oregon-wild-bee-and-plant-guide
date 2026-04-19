@@ -17,6 +17,9 @@ const DataDisplay = ({
   setSelectedCoords,
 }) => {
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const [exportCooldownUntil, setExportCooldownUntil] = useState(0);
+  const EXPORT_COOLDOWN_MS = 4000;
 
   // On click of export, send post request to backend to generate PDF
   // Render API base
@@ -47,7 +50,13 @@ const DataDisplay = ({
   };
 
   const handleExport = async () => {
-    if (!locationData) return;
+    if (!locationData || exportLoading) return;
+    if (Date.now() < exportCooldownUntil) {
+      const waitSeconds = Math.ceil((exportCooldownUntil - Date.now()) / 1000);
+      setExportError(`Please wait ${waitSeconds} seconds before exporting again.`);
+      return;
+    }
+    setExportError("");
 
     const exportEndpoint = exportEndpointMap[activePrompt] ?? "/api/export-pdf/";
 
@@ -103,6 +112,23 @@ const DataDisplay = ({
       });
 
       if (!response.ok) {
+        try {
+          const errJson = await response.json();
+          if (typeof errJson?.detail === "string") {
+            throw new Error(errJson.detail);
+          }
+          if (errJson?.detail?.message) {
+            const retry = errJson.detail.retryAfterSeconds;
+            const msg = Number.isFinite(retry)
+              ? `${errJson.detail.message} Try again in ${retry} seconds.`
+              : errJson.detail.message;
+            throw new Error(msg);
+          }
+        } catch (parseErr) {
+          if (parseErr instanceof Error) {
+            throw parseErr;
+          }
+        }
         throw new Error("Failed to export report file");
       }
 
@@ -162,7 +188,9 @@ const DataDisplay = ({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Export error:", error);
+      setExportError(error?.message || "Could not export report.");
     } finally {
+      setExportCooldownUntil(Date.now() + EXPORT_COOLDOWN_MS);
       if (showExportBeeLoader) {
         setExportLoading(false);
       }
@@ -339,11 +367,17 @@ const DataDisplay = ({
             bg="blue.600"
             _hover={{ bg: "blue.500" }}
             onClick={handleExport}
+            disabled={exportLoading}
           >
             <LuFileUp /> Export Results
           </Button>
         )}
       </Flex>
+      {exportError && (
+        <Text fontSize="sm" color="red.600">
+          {exportError}
+        </Text>
+      )}
     </Flex>
   );
 };

@@ -63,3 +63,43 @@ npm run dev
 ```
 
 4. Once the server is running, press `o + enter` to open the app in your browser (`q + enter` will stop the dev server).
+
+# Backend Stress Guardrails (Render)
+
+The API now includes fail-fast guardrails for heavy endpoints so public traffic cannot overwhelm the free Render instance.
+
+## What is guarded
+
+- `GET /api/detailed-report/`
+- `POST /api/export-detailed-pdf/`
+- `POST /api/export-pdf/`
+
+When limits are exceeded, the API intentionally returns:
+
+- `429` when too many heavy requests are already running.
+- `503` when memory pressure is above threshold (if `psutil` is installed and memory guard is enabled).
+
+Error responses include:
+
+- `detail.code`
+- `detail.message`
+- `detail.retryAfterSeconds`
+
+## Environment variables
+
+All guardrails are configurable without code changes:
+
+- `MAX_HEAVY_INFLIGHT` (default `1`): total concurrent heavy requests across guarded endpoints.
+- `MAX_REPORT_INFLIGHT` (default `1`): concurrent `detailed-report` requests.
+- `MAX_EXPORT_INFLIGHT` (default `1`): concurrent export requests.
+- `MEMORY_GUARD_ENABLED` (default `true`): enables memory pressure rejection logic.
+- `MEMORY_USAGE_REJECT_PCT` (default `88`): reject heavy requests when memory usage is at/above this percentage.
+- `GUARDRAIL_RETRY_AFTER_SECONDS` (default `8`): retry hint returned to clients.
+- `GUARDRAIL_LOG_REJECTIONS` (default `true`): logs when guardrails reject requests.
+
+## Tuning guidance by deployment tier
+
+- **Free/small RAM tiers:** start with all inflight limits at `1`.
+- **After RAM upgrade:** raise limits gradually (for example one setting at a time) and run `stress_test.py` after each change.
+- **If users see frequent 503s:** either lower concurrency settings or increase available RAM.
+- **If memory guard is unavailable:** install `psutil` to enable memory-based rejection; concurrency guardrails still work without it.
