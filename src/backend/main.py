@@ -161,6 +161,7 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
         "response": [],
         "error": False,
         "err_msg": "",
+        "region_type": region_type,
         "region_name": "",
         "region_key": "",
         "lat": lat,
@@ -203,10 +204,6 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
             )
     except Exception:
         allowed_plants = None
-
-    # Use ecoregion name for display header (plants are filtered by ecoregion)
-    if eco_response and eco_response.get("region_name"):
-        response_json["region_name"] = eco_response["region_name"]
 
     regional_bee_counts = sl.get_regional_bee_counts(eco_filtered_df) if eco_filtered_df is not None else {}
     bp.get_best_plants(response_json, lat, long, inat_key=inat_key, allowed_plant_ids=allowed_plants, regional_bee_counts=regional_bee_counts)
