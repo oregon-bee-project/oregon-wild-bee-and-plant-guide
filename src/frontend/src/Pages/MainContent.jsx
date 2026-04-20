@@ -17,6 +17,7 @@ const MainContent = () => {
   const [activePrompt, setActivePrompt] = useState(null);
   const [errorDialogMsg, setErrorDialogMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [mapResetTrigger, setMapResetTrigger] = useState(0);
   const { open, onOpen, onClose } = useDisclosure();
 
   const API_BASE = import.meta.env.PROD
@@ -31,7 +32,7 @@ const MainContent = () => {
 
     // check that coordinate fields are populated
     if (selectedCoords.lat == "" || selectedCoords.lng == "") {
-      setErrorDialogMsg("Please set a value for both Latitude and Longitude.");
+      setErrorDialogMsg("Please choose a location.");
       return;
     }
 
@@ -120,7 +121,7 @@ const MainContent = () => {
       <Flex
         h="100%"
         p={{ base: "5px", md: "10px" }}
-        gap={{ base: "10px", md: "30px" }}
+        gap={{ base: "10px", md: "10px" }}
         direction={{ base: "column", md: "row" }}
       >
         {isPromptsMapPage ? (
@@ -154,6 +155,10 @@ const MainContent = () => {
               fetchLocationData={fetchLocationData}
               showButton={true}
               setErrorDialogMsg={setErrorDialogMsg}
+              selectedRegion={selectedRegion}
+              setSelectedRegion={setSelectedRegion}
+              selectedCoords={selectedCoords}
+              setSelectedCoords={setSelectedCoords}
             />
 
             {/* Mobile drawer for sidebar */}
@@ -173,6 +178,11 @@ const MainContent = () => {
                     fetchLocationData={fetchLocationData}
                     onPromptSelect={onClose}
                     showButton={false}
+                    setErrorDialogMsg={setErrorDialogMsg}
+                    selectedRegion={selectedRegion}
+                    setSelectedRegion={setSelectedRegion}
+                    selectedCoords={selectedCoords}
+                    setSelectedCoords={setSelectedCoords}
                   />
                   <Button mt="2" w="100%" onClick={onClose}>
                     Done
@@ -187,18 +197,20 @@ const MainContent = () => {
               setErrorDialogMsg={setErrorDialogMsg}
               selectedRegion={selectedRegion}
               setSelectedRegion={setSelectedRegion}
+              mapResetTrigger={mapResetTrigger}
             />
           </>
         ) : (
-          <DataDisplay
-            locationData={locationData}
-            activePrompt={activePrompt}
-            selectedCoords={selectedCoords}
-            setActivePage={setActivePage}
-            setActivePrompt={setActivePrompt}
-            setSelectedCoords={setSelectedCoords}
-            selectedRegion={selectedRegion}
-          />
+            <DataDisplay
+              locationData={locationData}
+              activePrompt={activePrompt}
+              selectedCoords={selectedCoords}
+              setActivePage={setActivePage}
+              setActivePrompt={setActivePrompt}
+              setSelectedCoords={setSelectedCoords}
+              selectedRegion={selectedRegion}
+              setMapResetTrigger={setMapResetTrigger}
+            />
         )}
       </Flex>
     </>

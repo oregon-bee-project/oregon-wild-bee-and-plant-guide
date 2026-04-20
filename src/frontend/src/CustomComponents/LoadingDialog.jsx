@@ -37,7 +37,7 @@ const LoadingDialog = ({ isOpen }) => {
                                 </Text>
                             </Box>
                             <Dialog.Title fontSize="lg" fontWeight="medium">
-                                Running Prompt...
+                                Floralyzing the data...
                             </Dialog.Title>
                         </Dialog.Body>
                     </Dialog.Content>

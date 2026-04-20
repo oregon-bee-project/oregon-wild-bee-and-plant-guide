@@ -11,6 +11,7 @@ const DataDisplay = ({
   setActivePage,
   setActivePrompt,
   setSelectedCoords,
+  setMapResetTrigger,
 }) => {
   // On click of export, send post request to backend to generate PDF
   // Render API base
@@ -204,10 +205,11 @@ const DataDisplay = ({
           onClick={() => {
             setActivePage("prompts-map");
             setActivePrompt(null);
-            //setSelectedCoords({ lat: "", lng: "" });
+            setSelectedCoords({ lat: "", lng: "" });
+            setMapResetTrigger(prev => prev + 1);
           }}
         >
-          <LuRefreshCcw /> Try a New Prompt
+          <LuRefreshCcw /> Explore again
         </Button>
         {(activePrompt === 1 || activePrompt === 3) && (
           <Button
@@ -216,7 +218,7 @@ const DataDisplay = ({
             _hover={{ bg: "blue.500" }}
             onClick={handleExport}
           >
-            <LuFileUp /> Export Results
+            <LuFileUp /> Export results
           </Button>
         )}
       </Flex>
