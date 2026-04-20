@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
 import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
+import ImageLightbox from "../CustomComponents/ImageLightbox";
+import DataContextInfo from "../CustomComponents/DataContextInfo";
+import LoadingDialog from "../CustomComponents/LoadingDialog";
 
 const DataDisplay = ({
   locationData,
@@ -13,6 +17,8 @@ const DataDisplay = ({
   setSelectedCoords,
   setMapResetTrigger,
 }) => {
+  const [exportLoading, setExportLoading] = useState(false);
+
   // On click of export, send post request to backend to generate PDF
   // Render API base
   const API_BASE = import.meta.env.PROD
@@ -24,10 +30,66 @@ const DataDisplay = ({
     3: "/api/export-detailed-pdf/",
   };
 
+  const parseContentDispositionFilename = (disposition, fallback) => {
+    if (!disposition) return fallback;
+    const utf8 = disposition.match(/filename\*=UTF-8''([^;\n]+)/i);
+    if (utf8) {
+      try {
+        return decodeURIComponent(utf8[1].trim());
+      } catch {
+        return fallback;
+      }
+    }
+    const quoted = disposition.match(/filename="([^"]+)"/i);
+    if (quoted) return quoted[1].trim();
+    const plain = disposition.match(/filename=([^;\n]+)/i);
+    if (plain) return plain[1].trim().replace(/^"|"$/g, "");
+    return fallback;
+  };
+
   const handleExport = async () => {
     if (!locationData) return;
 
     const exportEndpoint = exportEndpointMap[activePrompt] ?? "/api/export-pdf/";
+
+    // showSaveFilePicker must run while a user gesture is still active. Awaiting fetch() first
+    // consumes that activation, which causes SecurityError. For detailed PDF, open the picker
+    // before the network request, then stream or write the blob to the chosen handle.
+    let saveFileHandle = null;
+    const canUseSavePicker =
+      activePrompt === 3 && typeof window.showSaveFilePicker === "function";
+
+    if (canUseSavePicker) {
+      const regionSlug =
+        String(locationData.region_name || "report")
+          .trim()
+          .replace(/\s+/g, "_")
+          .replace(/[^\w.-]/g, "")
+          .slice(0, 120) || "report";
+      const pickerSuggestedName = `${regionSlug}_Detailed_Bee_Plant_Report.pdf`;
+      try {
+        saveFileHandle = await window.showSaveFilePicker({
+          suggestedName: pickerSuggestedName,
+          types: [
+            {
+              description: "Report export",
+              accept: { "application/pdf": [".pdf"] },
+            },
+          ],
+        });
+      } catch (pickErr) {
+        if (pickErr?.name === "AbortError") return;
+        saveFileHandle = null;
+      }
+    }
+
+    // Same bee animation as query loading: prompt 1 always; prompt 3 only for classic
+    // blob + <a download> (no file picker / streaming path).
+    const showExportBeeLoader =
+      activePrompt === 1 || (activePrompt === 3 && saveFileHandle == null);
+    if (showExportBeeLoader) {
+      setExportLoading(true);
+    }
 
     try {
       const response = await fetch(`${API_BASE}${exportEndpoint}`, {
@@ -42,32 +104,75 @@ const DataDisplay = ({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to export PDF");
+        throw new Error("Failed to export report file");
+      }
+
+      const disposition = response.headers.get("Content-Disposition");
+      const contentType = response.headers.get("Content-Type") || "";
+      let fallbackName = contentType.includes("zip") ? "export.zip" : "export.pdf";
+      const filename = parseContentDispositionFilename(disposition, fallbackName);
+
+      const lenHeader = response.headers.get("Content-Length");
+      const contentLen = lenHeader ? parseInt(lenHeader, 10) : NaN;
+      const largeDownload =
+        Number.isFinite(contentLen) && contentLen > 8 * 1024 * 1024;
+
+      // Stream when we have a pre-opened handle and size is unknown/huge (avoids tab OOM on Blob).
+      const preferStreamToDisk =
+        saveFileHandle != null &&
+        response.body != null &&
+        (largeDownload || !Number.isFinite(contentLen));
+
+      if (preferStreamToDisk) {
+        try {
+          const writable = await saveFileHandle.createWritable();
+          await response.body.pipeTo(writable);
+          return;
+        } catch (streamErr) {
+          if (streamErr?.name === "AbortError") return;
+          console.error("Streamed export failed:", streamErr);
+          throw new Error(
+            "Could not save the file. If the download was large, try again or use Chrome/Edge."
+          );
+        }
       }
 
       const blob = await response.blob();
+
+      if (saveFileHandle != null) {
+        try {
+          const writable = await saveFileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return;
+        } catch (writeErr) {
+          console.error("Writing export to file failed:", writeErr);
+          throw new Error(
+            "Could not save the file. If the download was large, try again or use Chrome/Edge."
+          );
+        }
+      }
+
       const url = window.URL.createObjectURL(blob);
 
       const link = document.createElement("a");
       link.href = url;
-      const disposition = response.headers.get("Content-Disposition");
-      let filename = "export.pdf"; // fallback
-
-      if (disposition && disposition.includes("filename=")) {
-        filename = disposition.split("filename=")[1].replace(/"/g, ""); // remove quotes if present
-      }
-
       link.download = filename;
       link.click();
 
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Export error:", error);
+    } finally {
+      if (showExportBeeLoader) {
+        setExportLoading(false);
+      }
     }
   };
 
   return (
     <Flex direction="column" flex="1" align="stretch" gap={2}>
+      <LoadingDialog isOpen={exportLoading} title="Preparing export…" />
       {/* data display area */}
       <Box
         flex="1"
@@ -86,7 +191,16 @@ const DataDisplay = ({
             ? plants.reduce((sum, p) => sum + (Number(p?.score) || 0), 0)
             : 0;
           return (
-            <Box bg="white" p={{ base: 3, md: 5 }} borderRadius="xl" boxShadow="md" width="100%" maxW="100%">
+            <Box bg="white" p={{ base: 3, md: 5 }} borderRadius="xl" boxShadow="md" width="100%" maxW="100%" pos="relative">
+              <Box pos="absolute" top={2} left={2}>
+                <DataContextInfo title="About These Plant Recommendations" defaultOpen>
+                  <Text>These are the top 5 plants recommended for your area to help support local bee populations. The recommendations are generated using a prediction model trained on thousands of real bee-plant interactions observed by bee researchers and community scientists across Oregon.</Text>
+                  <Text>Only plants found in the <strong>Oregon Flora</strong> native plant database are included, so these should be safe and beneficial to plant in Oregon.</Text>
+                  <Text>The <strong>interaction share percentage</strong> gives a sense of how much each plant contributes to supporting bees compared to the others in this list. A higher percentage means that plant is predicted to attract a wider variety or greater number of local bees.</Text>
+                  <Text><strong>Top bees this plant supports</strong> shows which bee species in your area are most likely to visit each plant. You can click any plant image to see a larger photo.</Text>
+                  <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Keep in mind that data has been recorded since 2017 and some areas have more observations than others, so a region with fewer total records may not fully represent all the bees and plants that live there.</Text>
+                </DataContextInfo>
+              </Box>
               <VStack spacing={4} align="stretch">
                 <Heading size="md" textAlign="center">
                   {locationData.region_name || "Best plants to support bees in your area"}
@@ -113,29 +227,32 @@ const DataDisplay = ({
                           overflow="hidden"
                           pb={4}
                         >
-                          <Text fontSize="md" fontWeight="bold" px={3} pt={3} noOfLines={2}>
-                            {commonName}
-                          </Text>
-                          {iNatTaxonName ? (
-                            <Text fontStyle="italic" color="gray.600" fontSize="sm" px={3} pb={2} noOfLines={1}>
-                              {iNatTaxonName}
+                          <Flex align="baseline" gap={2} wrap="wrap" px={3} pt={3} pb={iNatTaxonName && iNatTaxonName !== commonName ? 0 : 2}>
+                            <Text fontSize="lg" fontWeight="bold" fontStyle={commonName === iNatTaxonName ? "italic" : "normal"} noOfLines={2}>
+                              {commonName}
                             </Text>
-                          ) : null}
+                            {iNatTaxonName && iNatTaxonName !== commonName ? (
+                              <Text fontStyle="italic" color="gray.600" fontSize="md" noOfLines={1}>
+                                {iNatTaxonName}
+                              </Text>
+                            ) : null}
+                          </Flex>
                           <Flex
                             direction={{ base: "column", md: "row" }}
                             align={{ base: "stretch", md: "flex-start" }}
-                            minH={{ base: "auto", md: "220px" }}
                           >
                             {iNatURL ? (
-                              <Box flex={1} h={{ base: "200px", md: "220px" }} flexShrink={0} bg="green.50" overflow="hidden">
-                                <Image
-                                  src={iNatURL}
-                                  alt={commonName}
-                                  width="100%"
-                                  height="100%"
-                                  objectFit="contain"
-                                  display="block"
-                                />
+                              <Box flex={1} flexShrink={0} bg="green.50">
+                                <ImageLightbox src={iNatURL} alt={commonName}>
+                                  <Image
+                                    src={iNatURL}
+                                    alt={commonName}
+                                    width="100%"
+                                    maxH="300px"
+                                    objectFit="contain"
+                                    display="block"
+                                  />
+                                </ImageLightbox>
                               </Box>
                             ) : null}
                             <Box
@@ -195,7 +312,14 @@ const DataDisplay = ({
             </Box>
           );
         })()}
-        {locationData && activePrompt === 3 && <DetailedReportPanel data={locationData} />}
+        {locationData && activePrompt === 3 && (
+          <DetailedReportPanel
+            data={locationData}
+            apiBase={API_BASE}
+            selectedCoords={selectedCoords}
+            selectedRegion={selectedRegion}
+          />
+        )}
       </Box>
       <Flex gap="8px">
         <Button

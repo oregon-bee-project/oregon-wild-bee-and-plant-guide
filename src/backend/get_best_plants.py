@@ -35,6 +35,8 @@ def lookup_plant_display(inat_key, plant_id):
         taxon_name = _normalize_string(inat_key.loc[row_mask, "scientificName"].iloc[0]) or ""
     if not taxon_name and "name" in inat_key.columns:
         taxon_name = _normalize_string(inat_key.loc[row_mask, "name"].iloc[0]) or ""
+    if not taxon_name and "iNaturalistTaxonName" in inat_key.columns:
+        taxon_name = _normalize_string(inat_key.loc[row_mask, "iNaturalistTaxonName"].iloc[0]) or ""
     if "iNaturalistTaxonImage" in inat_key.columns:
         plant_image_url = _normalize_string(inat_key.loc[row_mask, "iNaturalistTaxonImage"].iloc[0]) or ""
     if not common_name:
