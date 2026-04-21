@@ -10,6 +10,7 @@ import io
 import csv
 from fastapi.responses import StreamingResponse
 import detailed_report as dr
+from guardrails import heavy_request_guard
 
 app = FastAPI()
 
@@ -90,13 +91,14 @@ def detailed_report_root(
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
 
-    dr.everySpeciesList(
-        response_json,
-        inat_key,
-        filtered_df,
-        bee_list_offset=species_offset,
-        bee_list_limit=species_limit,
-    )
+    with heavy_request_guard("report"):
+        dr.everySpeciesList(
+            response_json,
+            inat_key,
+            filtered_df,
+            bee_list_offset=species_offset,
+            bee_list_limit=species_limit,
+        )
 
     return response_json
 
@@ -127,33 +129,35 @@ def export_detailed_pdf(payload: dict):
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
 
-    dr.everySpeciesList(
-        response_json,
-        inat_key,
-        filtered_df,
-        bee_list_limit=None,
-    )
+    with heavy_request_guard("export"):
+        dr.everySpeciesList(
+            response_json,
+            inat_key,
+            filtered_df,
+            bee_list_limit=None,
+        )
 
-    stats = response_json.get("response", {})
+        stats = response_json.get("response", {})
 
-    if not stats:
-        raise HTTPException(status_code=404, detail="No data returned for selected location.")
+        if not stats:
+            raise HTTPException(status_code=404, detail="No data returned for selected location.")
 
-    title = "Detailed Bee and Plant Report"
-    location = response_json["region_name"]
-    pdf_buffer = g_detailed_pdf(stats, title=title, location=location, filtered_df=filtered_df)
+        title = "Detailed Bee and Plant Report"
+        location = response_json["region_name"]
+        pdf_buffer = g_detailed_pdf(stats, title=title, location=location, filtered_df=filtered_df)
 
-    safe_location = location.replace(" ", "_")
-    filename = f"{safe_location}_Detailed_Bee_Plant_Report.pdf"
+        safe_location = location.replace(" ", "_")
+        filename = f"{safe_location}_Detailed_Bee_Plant_Report.pdf"
 
-    return StreamingResponse(
-        pdf_buffer,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Access-Control-Expose-Headers": "Content-Disposition"
-        }
-    )
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition",
+                "X-Accel-Buffering": "no",
+            }
+        )
 
 @app.get("/api/best-plants-to-plant/")
 def best_plants_root(lat: float, long: float, region_type: str = "county"):
@@ -259,28 +263,30 @@ def export_pdf(payload: dict):
     if response_json["error"]:
         raise HTTPException(status_code=400, detail=response_json["err_msg"])
     
-    sl.summary_stats(response_json, inat_key, filtered_df)
+    with heavy_request_guard("export"):
+        sl.summary_stats(response_json, inat_key, filtered_df)
 
-    summary_stats = response_json.get("response", [])
-    rows = fs.flatten_summary(summary_stats)
+        summary_stats = response_json.get("response", [])
+        rows = fs.flatten_summary(summary_stats)
 
-    if not rows:
-        raise HTTPException(status_code=404, detail="No data returned for selected location.")
+        if not rows:
+            raise HTTPException(status_code=404, detail="No data returned for selected location.")
 
-    # Generate PDF
-    title = "Common Bee and Plant Report"
-    location = response_json["region_name"]
-    pdf_buffer = g_pdf(rows, title=title, location=location)
+        # Generate PDF
+        title = "Common Bee and Plant Report"
+        location = response_json["region_name"]
+        pdf_buffer = g_pdf(rows, title=title, location=location)
 
-    safe_location = location.replace(" ","_")
-    filename = f"{safe_location}_Common_Bee_Plant_Report.pdf"
+        safe_location = location.replace(" ","_")
+        filename = f"{safe_location}_Common_Bee_Plant_Report.pdf"
 
-    return StreamingResponse(
-        pdf_buffer,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Access-Control-Expose-Headers": "Content-Disposition"
-        }
-    )
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition",
+                "X-Accel-Buffering": "no",
+            }
+        )
     
