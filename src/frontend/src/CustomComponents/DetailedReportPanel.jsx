@@ -158,6 +158,7 @@ const DetailedReportPanel = ({
   const [loadError, setLoadError] = useState(null);
 
   const sentinelRef = useRef(null);
+  const loadControllerRef = useRef(null);
   const hasMoreRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const accumulatedBeesRef = useRef([]);
@@ -204,6 +205,9 @@ const DetailedReportPanel = ({
     loadingMoreRef.current = true;
     setLoadingMore(true);
     setLoadError(null);
+    loadControllerRef.current?.abort();
+    const controller = new AbortController();
+    loadControllerRef.current = controller;
 
     try {
       const params = new URLSearchParams({
@@ -213,12 +217,21 @@ const DetailedReportPanel = ({
         species_offset: String(offset),
         species_limit: String(SPECIES_PAGE_SIZE),
       });
-      const res = await fetch(`${apiBase}/api/detailed-report/?${params.toString()}`);
+      const res = await fetch(`${apiBase}/api/detailed-report/?${params.toString()}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) {
         let detail = "Request failed";
         try {
           const errJson = await res.json();
-          detail = errJson.detail ?? detail;
+          if (typeof errJson?.detail === "string") {
+            detail = errJson.detail;
+          } else if (errJson?.detail?.message) {
+            const retry = errJson.detail.retryAfterSeconds;
+            detail = Number.isFinite(retry)
+              ? `${errJson.detail.message} Try again in ${retry} seconds.`
+              : errJson.detail.message;
+          }
         } catch {
           /* ignore */
         }
@@ -230,8 +243,12 @@ const DetailedReportPanel = ({
       setAccumulatedBees((prev) => [...prev, ...next]);
       setHasMore(Boolean(json.response?.beeListHasMore));
     } catch (e) {
+      if (e?.name === "AbortError") return;
       setLoadError(e?.message || "Failed to load more species");
     } finally {
+      if (loadControllerRef.current === controller) {
+        loadControllerRef.current = null;
+      }
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
@@ -256,6 +273,13 @@ const DetailedReportPanel = ({
     observer.observe(el);
     return () => observer.disconnect();
   }, [data, regionKey]);
+
+  useEffect(() => {
+    return () => {
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
+  }, []);
 
   if (!data || !data.response) return null;
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Flex, Button, useDisclosure, Drawer, Text } from "@chakra-ui/react";
 import { LuMenu, LuCheck } from "react-icons/lu";
 import PromptSidebar from "../CustomComponents/PromptSidebar";
@@ -18,6 +18,7 @@ const MainContent = () => {
   const [errorDialogMsg, setErrorDialogMsg] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [mapResetTrigger, setMapResetTrigger] = useState(0);
+  const activeRequestControllerRef = useRef(null);
   const { open, onOpen, onClose } = useDisclosure();
 
   const API_BASE = import.meta.env.PROD
@@ -25,6 +26,10 @@ const MainContent = () => {
     : ""; // this is what the url prefix will be in dev
 
   const fetchLocationData = async () => {
+    if (isLoading) {
+      return;
+    }
+
     if (!activePrompt) {
       setErrorDialogMsg("Please choose a prompt.");
       return;
@@ -43,6 +48,25 @@ const MainContent = () => {
 
     // set loading state to true before making API call
     setIsLoading(true);
+    activeRequestControllerRef.current?.abort();
+    const controller = new AbortController();
+    activeRequestControllerRef.current = controller;
+
+    const parseApiErrorMessage = async (res, fallback) => {
+      try {
+        const errorJson = await res.json();
+        if (typeof errorJson?.detail === "string") return errorJson.detail;
+        if (errorJson?.detail?.message) {
+          const retry = errorJson.detail.retryAfterSeconds;
+          return Number.isFinite(retry)
+            ? `${errorJson.detail.message} Try again in ${retry} seconds.`
+            : errorJson.detail.message;
+        }
+      } catch {
+        // ignore parse failure
+      }
+      return fallback;
+    };
 
     try {
       if (activePrompt === 1) {
@@ -51,10 +75,12 @@ const MainContent = () => {
           long: selectedCoords.lng,
           region_type: selectedRegion.toLowerCase(),
         });
-        const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`);
+        const res = await fetch(`${API_BASE}/api/location-data/?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) {
-          const errorJson = await res.json();
-          throw new Error(errorJson.detail);
+          const msg = await parseApiErrorMessage(res, "Request failed");
+          throw new Error(msg);
         }
         const json = await res.json();
         setLocationData(json);
@@ -65,10 +91,12 @@ const MainContent = () => {
           long: selectedCoords.lng,
           region_type: (selectedRegion || "county").toLowerCase(),
         });
-        const res = await fetch(`${API_BASE}/api/best-plants-to-plant/?${params.toString()}`);
+        const res = await fetch(`${API_BASE}/api/best-plants-to-plant/?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) {
-          const errorJson = await res.json();
-          throw new Error(errorJson.detail ?? errorJson.err_msg ?? "Request failed");
+          const msg = await parseApiErrorMessage(res, "Request failed");
+          throw new Error(msg);
         }
         const json = await res.json();
         if (json.error) {
@@ -84,16 +112,21 @@ const MainContent = () => {
           species_offset: "0",
           species_limit: "25",
         });
-        const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`);
+        const res = await fetch(`${API_BASE}/api/detailed-report/?${params.toString()}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) {
-          const errorJson = await res.json();
-          throw new Error(errorJson.detail);
+          const msg = await parseApiErrorMessage(res, "Request failed");
+          throw new Error(msg);
         }
         const json = await res.json();
         setLocationData(json);
         setActivePage("data-display");
       }
     } catch (err) {
+      if (err?.name === "AbortError") {
+        return;
+      }
       console.error("Error fetching location data:", err.message, err);
       if (err.message == "Region not found using provided Shape Files") {
         setErrorDialogMsg(`Unable to fetch data for the selected
@@ -103,6 +136,9 @@ const MainContent = () => {
       }
     } finally {
       setIsLoading(false);
+      if (activeRequestControllerRef.current === controller) {
+        activeRequestControllerRef.current = null;
+      }
     }
   };
 
