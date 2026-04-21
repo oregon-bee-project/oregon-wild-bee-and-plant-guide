@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Box,
-  Flex,
-  Input,
-  Group,
-  Button,
-  Portal,
-  Select,
-  Text,
   createListCollection,
 } from "@chakra-ui/react";
 import maplibregl from "maplibre-gl";
@@ -27,12 +20,12 @@ const InteractiveMap = ({
   setErrorDialogMsg,
   selectedRegion,
   setSelectedRegion,
+  mapResetTrigger,
 }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const selectedFeatureRef = useRef(null);
-  const [address, setAddress] = useState("");
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   const handleLayerChange = (e) => {
@@ -85,6 +78,10 @@ const InteractiveMap = ({
     mapRef.current.setFeatureState(selectedFeatureRef.current, { selected: true });
     return true;
   };
+
+  useEffect(() => {
+    clearSelectedFeature();
+  }, [mapResetTrigger]);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -245,114 +242,17 @@ const InteractiveMap = ({
     };
   }, [isMapLoaded, selectedCoords, selectedRegion]);
 
-  const geocodeAddress = async (address) => {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-    );
-
-    const data = await response.json();
-
-    if (data.length > 0) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-      };
-    } else {
-      throw new Error("No results found");
-    }
-  };
-
-  const handleSetAddress = async () => {
-    if (!address) return;
-
-    try {
-      const coords = await geocodeAddress(address);
-
-      setSelectedCoords(coords);
-
-      // Center map + place marker
-      if (mapRef.current) {
-        mapRef.current.flyTo({
-          center: [coords.lng, coords.lat],
-          zoom: 10,
-        });
-      }
-
-      placeMarker(coords.lng, coords.lat);
-    } catch (err) {
-      setErrorDialogMsg("Address not found.");
-    }
-  };
-
 
   return (
-    <Flex direction="column" flex="1" align="stretch" gap={2}>
-      <Flex gap={2} direction={{ base: "column", md: "row" }} align="center">
-        <Text>I want to learn about bees and plants in the</Text>
-        <Select.Root
-          minW={{base: "100%", md: "10%"}}
-          maxW={{base: "100%", md: "15%"}}
-          collection={overlays}
-          flex={{ base: "1", md: "1" }}
-          value={[selectedRegion || "county"]}
-          onValueChange={handleLayerChange}
-        >
-          <Select.HiddenSelect />
-          <Select.Control>
-            <Select.Trigger>
-              <Select.ValueText placeholder="Select overlay" />
-            </Select.Trigger>
-            <Select.IndicatorGroup>
-              <Select.Indicator />
-            </Select.IndicatorGroup>
-          </Select.Control>
-          <Portal>
-            <Select.Positioner>
-              <Select.Content>
-                {overlays.items.map((overlays) => (
-                  <Select.Item item={overlays} key={overlays.value}>
-                    {overlays.label}
-                    <Select.ItemIndicator />
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Positioner>
-          </Portal>
-        </Select.Root>
-        <Text>near this location:</Text>
-        <Group
-          attached
-          w="full"
-          minW={{base: "100%", md: "60%"}}
-          maxW={{base: "100%", md: "60%"}}
-        >
-          <Input
-            flex="1"
-            placeholder="Type an address, or click on the map"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            bg="bg.subtle"
-            _hover={{ bg: "green.100" }}
-            onClick={handleSetAddress}
-          >
-            Set Address
-          </Button>
-        </Group>
-      </Flex>
-
-      <Box
-        flex="1"
-        borderWidth="2px"
-        borderRadius="md"
-        bg="gray.100"
-        overflow="hidden"
-      >
-        <Box ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
-      </Box>
-    </Flex>
+    <Box
+      flex="1"
+      borderWidth="2px"
+      borderRadius="md"
+      bg="gray.100"
+      overflow="hidden"
+    >
+      <Box ref={mapContainerRef} style={{ width: "100%", height: "100%" }} />
+    </Box>
   );
 };
 

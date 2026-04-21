@@ -15,6 +15,7 @@ const DataDisplay = ({
   setActivePage,
   setActivePrompt,
   setSelectedCoords,
+  setMapResetTrigger,
 }) => {
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -356,10 +357,11 @@ const DataDisplay = ({
           onClick={() => {
             setActivePage("prompts-map");
             setActivePrompt(null);
-            //setSelectedCoords({ lat: "", lng: "" });
+            setSelectedCoords({ lat: "", lng: "" });
+            setMapResetTrigger(prev => prev + 1);
           }}
         >
-          <LuRefreshCcw /> Try a New Prompt
+          <LuRefreshCcw /> Explore again
         </Button>
         {(activePrompt === 1 || activePrompt === 3) && (
           <Button
@@ -369,7 +371,7 @@ const DataDisplay = ({
             onClick={handleExport}
             disabled={exportLoading}
           >
-            <LuFileUp /> Export Results
+            <LuFileUp /> Export results
           </Button>
         )}
       </Flex>
