@@ -357,7 +357,7 @@ const DataDisplay = ({
           onClick={() => {
             setActivePage("prompts-map");
             setActivePrompt(null);
-            setSelectedCoords({ lat: "", lng: "" });
+            // setSelectedCoords({ lat: "", lng: "" });
             setMapResetTrigger(prev => prev + 1);
           }}
         >
