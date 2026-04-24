@@ -2,9 +2,9 @@
 
 An interactive web tool for Oregon bee enthusiasts, land managers, and conservation practitioners who need fast, location-based insight into bee-plant relationships.
 
-![Placeholder screenshot for Bee and Plant Data Exploration interface. Replace with a real app screenshot before final submission.](docs/media/app-demo-placeholder.svg)
+![Oregon Pollinator Explorer interface showing map view and location-based analysis options.](docs/media/app-demo.png)
 
-*Figure 1. Placeholder visual for the interactive experience. Replace with a real screenshot, short screen recording GIF, or demo video thumbnail showing the map and report workflow.*
+*Figure 1. Oregon Pollinator Explorer interface with map-based location selection and analysis options for common bees, best plants, and detailed reports.*
 
 Pollinator-support decisions are often made with limited local interaction data, which can lead to lower-impact habitat restoration choices. Oregon Pollinator Explorer turns complex biodiversity records into practical, map-driven guidance so local gardeners, bee enthusiasts, and conservation teams can quickly discover pollinator-friendly plants, understand local interaction patterns, and make more confident habitat and planting decisions.
 
