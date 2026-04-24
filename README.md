@@ -6,7 +6,7 @@ An interactive web tool for Oregon bee enthusiasts, land managers, and conservat
 
 *Figure 1. Placeholder visual for the interactive experience. Replace with a real screenshot, short screen recording GIF, or demo video thumbnail showing the map and report workflow.*
 
-Pollinator-support decisions are often made with limited local interaction data, which can lead to lower-impact habitat restoration choices. Oregon Pollinator Explorer turns complex biodiversity records into practical, map-driven guidance so teams can quickly compare likely high-value plants, understand local interaction patterns, and share clear reports for planning, communication, and field work.
+Pollinator-support decisions are often made with limited local interaction data, which can lead to lower-impact habitat restoration choices. Oregon Pollinator Explorer turns complex biodiversity records into practical, map-driven guidance so local gardeners, bee enthusiasts, and conservation teams can quickly discover pollinator-friendly plants, understand local interaction patterns, and make more confident habitat and planting decisions.
 
 ## Key Features
 
