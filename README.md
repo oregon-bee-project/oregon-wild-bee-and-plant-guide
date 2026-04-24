@@ -1,4 +1,4 @@
-# Bee and Plant Data Exploration
+# Oregon Pollinator Explorer
 
 An interactive web tool for Oregon bee enthusiast, land managers, and conservation practitioners to explore bee-plant interactions and make evidence-informed planting decisions.
 
@@ -19,9 +19,7 @@ Instead of manually parsing large biodiversity datasets, users get practical, ma
 - Produce downloadable PDF reports for both summary and detailed views to share with teams or stakeholders.
 - Explore results through an interactive frontend backed by a FastAPI service designed with request guardrails for reliability.
 
-## Try It
-
-- **Live demo:** [Open the app](http://kellen-sullivan.github.io/bee-plant-data-exploration/)
+## Try It Out [Oregon Pollinator Explorer](http://kellen-sullivan.github.io/bee-plant-data-exploration/)
 
 ### System and Platform Notes
 
