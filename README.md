@@ -13,10 +13,10 @@ Pollinator-support decisions are often made with limited local interaction data,
 - See bee and plant interaction summaries for a selected Oregon location using county, ecoregion, or related geographic context.
 - Generate a ranked list of recommended plants with supporting context such as observed top bee associations.
 - Produce downloadable PDF reports of local bee-plant interactions to share with teams or stakeholders.
-- Explore results through an interactive frontend backed by a FastAPI service designed with request guardrails for reliability.
+- Explore results in a responsive interactive map experience that stays dependable, even during periods of heavier use.
 
 ## Try It Out 
-- Link to [Oregon Pollinator Explorer](http://kellen-sullivan.github.io/bee-plant-data-exploration/) live site
+- Link to the [Oregon Pollinator Explorer](http://kellen-sullivan.github.io/bee-plant-data-exploration/) live site
 
 ### System and Platform Notes
 
