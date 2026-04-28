@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { Dialog, Portal, Box, Text } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
+import { BEE_FUN_FACTS } from "./beeFunFacts";
 
 const beeAnimation = keyframes`
   0% {
@@ -13,7 +15,14 @@ const beeAnimation = keyframes`
   }
 `;
 
-const LoadingDialog = ({ isOpen, title = "Running Prompt..." }) => {
+const pickRandomFact = () =>
+    BEE_FUN_FACTS[Math.floor(Math.random() * BEE_FUN_FACTS.length)];
+
+const LoadingDialog = ({ isOpen, title }) => {
+    const randomFact = useMemo(pickRandomFact, [isOpen]);
+
+    const isBeeFact = title == null;
+
     return (
         <Dialog.Root
             open={isOpen}
@@ -23,7 +32,14 @@ const LoadingDialog = ({ isOpen, title = "Running Prompt..." }) => {
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
                     <Dialog.Content>
-                        <Dialog.Body display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={6}>
+                        <Dialog.Body
+                            display="flex"
+                            flexDirection="column"
+                            alignItems="center"
+                            justifyContent="center"
+                            gap={2}
+                            py={6}
+                        >
                             <Box
                                 width="60px"
                                 height="60px"
@@ -36,9 +52,36 @@ const LoadingDialog = ({ isOpen, title = "Running Prompt..." }) => {
                                     🐝
                                 </Text>
                             </Box>
-                            <Dialog.Title fontSize="lg" fontWeight="medium">
-                                {title}
-                            </Dialog.Title>
+                            {isBeeFact ? (
+                                <>
+                                    <Dialog.Title
+                                        fontSize="lg"
+                                        fontWeight="semibold"
+                                        textAlign="center"
+                                        px={2}
+                                    >
+                                        Did you know?
+                                    </Dialog.Title>
+                                    <Text
+                                        fontSize="sm"
+                                        fontStyle="italic"
+                                        textAlign="center"
+                                        px={2}
+                                        color="fg.muted"
+                                    >
+                                        {randomFact}
+                                    </Text>
+                                </>
+                            ) : (
+                                <Dialog.Title
+                                    fontSize="lg"
+                                    fontWeight="medium"
+                                    textAlign="center"
+                                    px={2}
+                                >
+                                    {title}
+                                </Dialog.Title>
+                            )}
                         </Dialog.Body>
                     </Dialog.Content>
                 </Dialog.Positioner>
