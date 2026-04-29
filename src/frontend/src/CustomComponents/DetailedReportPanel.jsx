@@ -41,7 +41,7 @@ const SeasonBar = ({ springCount, summerCount, fallCount, winterCount }) => {
             px={1}
             align="center"
             justify="center"
-            style={{ width: `${pct}%`, minWidth: "28px" }}
+            style={{ width: `${pct}%`, minWidth: "34px" }}
           >
             <Text fontSize="2xs" fontWeight="bold" color="gray.800">
               {label}
@@ -70,7 +70,7 @@ const BeeCard = ({ bee }) => {
     <Box
       borderWidth="1px"
       borderRadius="xl"
-      p={4}
+      p={{ base: 4, md: 5 }}
       bg="white"
       boxShadow="sm"
     >
@@ -345,14 +345,17 @@ const DetailedReportPanel = ({
               Showing {accumulatedBees.length} of {totalListed}. Scroll down to load more.
             </Text>
           )}
-          <VStack align="stretch" spacing={3}>
+          <Flex wrap="wrap" gap={4} alignItems="stretch">
             {accumulatedBees.map((bee, idx) => (
-              <BeeCard
+              <Box
                 key={bee.scientificName ? `${bee.scientificName}-${idx}` : idx}
-                bee={bee}
-              />
+                w={{ base: "100%", lg: "calc(50% - 8px)" }}
+                minW={0}
+              >
+                <BeeCard bee={bee} />
+              </Box>
             ))}
-          </VStack>
+          </Flex>
 
           <Box ref={sentinelRef} minH="1px" aria-hidden="true" />
 
