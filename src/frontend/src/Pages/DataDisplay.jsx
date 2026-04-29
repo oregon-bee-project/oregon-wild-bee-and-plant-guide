@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Box, Flex, Button, Heading, Text, VStack, SimpleGrid, Image } from "@chakra-ui/react";
-import { LuFileUp, LuRefreshCcw } from "react-icons/lu";
+import { LuExternalLink, LuFileUp, LuRefreshCcw } from "react-icons/lu";
 import BeeStatsPanel from "../CustomComponents/BeeStatsPanel";
 import DetailedReportPanel from "../CustomComponents/DetailedReportPanel";
 import ImageLightbox from "../CustomComponents/ImageLightbox";
@@ -21,6 +21,7 @@ const DataDisplay = ({
   const [exportError, setExportError] = useState("");
   const [exportCooldownUntil, setExportCooldownUntil] = useState(0);
   const EXPORT_COOLDOWN_MS = 4000;
+  const DETAILED_REPORT_EXPLORER_URL = "https://agsci.oregonstate.edu/bee-atlas/melittoflora"; // TODO: add external technical detailed-report URL
 
   // On click of export, send post request to backend to generate PDF
   // Render API base
@@ -30,7 +31,7 @@ const DataDisplay = ({
 
   const exportEndpointMap = {
     1: "/api/export-pdf/",
-    3: "/api/export-detailed-pdf/",
+    // 3: "/api/export-detailed-pdf/", // kept for easy future reactivation
   };
 
   const parseContentDispositionFilename = (disposition, fallback) => {
@@ -52,6 +53,14 @@ const DataDisplay = ({
 
   const handleExport = async () => {
     if (!locationData || exportLoading) return;
+    if (activePrompt === 3) {
+      if (!DETAILED_REPORT_EXPLORER_URL) {
+        setExportError("Detailed explorer link is not configured yet.");
+        return;
+      }
+      window.open(DETAILED_REPORT_EXPLORER_URL, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (Date.now() < exportCooldownUntil) {
       const waitSeconds = Math.ceil((exportCooldownUntil - Date.now()) / 1000);
       setExportError(`Please wait ${waitSeconds} seconds before exporting again.`);
@@ -371,7 +380,8 @@ const DataDisplay = ({
             onClick={handleExport}
             disabled={exportLoading}
           >
-            <LuFileUp /> Export results
+            {activePrompt === 3 ? <LuExternalLink /> : <LuFileUp />}
+            {activePrompt === 3 ? " Explore detailed data" : " Export results"}
           </Button>
         )}
       </Flex>
