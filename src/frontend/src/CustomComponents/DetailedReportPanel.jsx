@@ -15,38 +15,45 @@ import {
 import { LuInfo } from "react-icons/lu";
 import ImageLightbox from "./ImageLightbox";
 import DataContextInfo from "./DataContextInfo";
+import { Tooltip } from "../components/ui/tooltip";
 
 const SPECIES_PAGE_SIZE = 25;
 
 const SeasonBar = ({ springCount, summerCount, fallCount, winterCount }) => {
   const seasons = [
-    { label: "Spr", count: springCount, color: "green.400" },
-    { label: "Sum", count: summerCount, color: "yellow.400" },
-    { label: "Fall", count: fallCount, color: "orange.400" },
-    { label: "Win", count: winterCount, color: "blue.300" },
+    { label: "Spr", season: "Spring", count: springCount, color: "green.400" },
+    { label: "Sum", season: "Summer", count: summerCount, color: "yellow.400" },
+    { label: "Fall", season: "Fall", count: fallCount, color: "orange.400" },
+    { label: "Win", season: "Winter", count: winterCount, color: "blue.300" },
   ];
   const total = seasons.reduce((acc, s) => acc + s.count, 0);
   if (total === 0) return null;
 
   return (
     <Flex gap={1} align="center" mt={1}>
-      {seasons.map(({ label, count, color }) => {
+      {seasons.map(({ label, season, count, color }) => {
         const pct = Math.round((count / total) * 100);
         if (pct === 0) return null;
+        const tooltipText =
+          count === 1
+            ? `${season}: 1 observation`
+            : `${season}: ${count.toLocaleString()} observations`;
         return (
-          <Flex
-            key={label}
-            bg={color}
-            borderRadius="sm"
-            px={1}
-            align="center"
-            justify="center"
-            style={{ width: `${pct}%`, minWidth: "34px" }}
-          >
-            <Text fontSize="2xs" fontWeight="bold" color="gray.800">
-              {label}
-            </Text>
-          </Flex>
+          <Tooltip key={label} content={tooltipText}>
+            <Flex
+              bg={color}
+              borderRadius="sm"
+              px={1}
+              align="center"
+              justify="center"
+              cursor="default"
+              style={{ width: `${pct}%`, minWidth: "34px" }}
+            >
+              <Text fontSize="2xs" fontWeight="bold" color="gray.800">
+                {label}
+              </Text>
+            </Flex>
+          </Tooltip>
         );
       })}
     </Flex>
