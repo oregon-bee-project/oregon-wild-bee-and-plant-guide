@@ -33,36 +33,36 @@ const InfoDialog = () => {
               <p>
                 <ul>
                   <li>
-                    ⚠️ Our outputs are the product of data gathered from the
-                    community of bee keepers, hobbyists, and experts around
-                    Oregon. There may be areas that are under respresented in
-                    the data but we have done our best to account for that.{" "}
+                    Outputs from the tool are based on bee-plant interaction data
+                    collected by Oregon State University Extension Service Master
+                    Melittologist Program volunteers for the Oregon Bee Atlas. The
+                    data is extremely rich but has some spatial, temporal, and
+                    taxonomic bias.
                     <br />
                     <br />
                   </li>
                   <li>
-                    ⚠️ The plant recommendation system should not recommend
-                    invasive species due to a cross check with an Oregon native
-                    plant inventory called Oregon Flora. However, whenever
-                    planting a new species, it is always good practice to double
-                    check that the plant is beneficial.
+                    ⚠️ The plant recommendation system relies on an attribute table
+                    to omit non-native and invasive plant species. However,
+                    whenever selecting a new native plant species, it is best
+                    practice to ensure that the plant is appropriate for the
+                    intended setting.
                     <br />
                     <br />
                   </li>
                   <li>
-                    ✏️ Note that this resource is intended to help land
-                    managers, gardners, and bee enthusiasts alike. It is not
-                    supposed to be the sole source of important decisions. It is
-                    always best to talk with your locol ecologist for any
-                    important questions.
+                    ✏️️ Note that this resource is intended to help land managers,
+                    gardeners, and bee enthusiasts alike. It is not supposed to
+                    be the sole source of important decisions. It is always best
+                    to talk with your local ecologist for any important questions.
                   </li>
                 </ul>
               </p>
               <Box mt={6} pt={4} borderTop="1px solid" borderColor="gray.200">
                 <Text fontSize="xs" fontStyle="italic" color="gray.600" mb={2}>
                   The Oregon Bee Atlas serves as a comprehensive resource about
-                  the wild bees of Oregon and their floral relations in order to
-                  foster effective use of this knowledge by the public.
+                  the wild bees of Oregon and their floral relations to foster
+                  effective use of this knowledge by the public.
                 </Text>
                 <Text fontSize="xs" color="gray.600" mb={2}>
                   The success of the Oregon Bee Atlas rests on the shoulders of
