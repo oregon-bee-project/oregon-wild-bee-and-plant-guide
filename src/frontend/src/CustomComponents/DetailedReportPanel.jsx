@@ -301,12 +301,12 @@ const DetailedReportPanel = ({
     <Box p={{ base: 4, md: 6 }} width="100%" pos="relative">
       <Box pos="absolute" top={2} left={2}>
         <DataContextInfo title="About This Detailed Report" defaultOpen>
-          <Text>This report lists every bee species that has been observed in your selected area. The data comes from real observations recorded by bee researchers and community scientists across Oregon.</Text>
-          <Text>An <strong>observation</strong> is a single recorded instance of a bee being found on a specific plant. The "obs." numbers you see throughout this page represent how many times that bee or plant was recorded — a higher number means it was spotted more frequently.</Text>
-          <Text>For each bee you can see how many times it was observed, the breakdown of <strong>males</strong> and <strong>females</strong>, and a <strong>seasonal activity bar</strong> showing which seasons it is most active (Spring, Summer, Fall, or Winter).</Text>
+          <Text>This report lists every bee species that has been observed in your selected area. The data comes from Oregon State University Extension Service Master Melittologist Program volunteers for the Oregon Bee Atlas who survey Oregon&apos;s incredibly biodiverse wild bee fauna and associated flowering plants.</Text>
+          <Text>An <strong>observation</strong> is a single recorded instance of a bee being found on a specific plant. The <Badge colorScheme="purple">obs.</Badge> numbers you see throughout this page represent how many times that bee or plant was recorded — a higher number means it was documented more frequently.</Text>
+          <Text>For each bee you can see how many times it was observed, the breakdown of males and females, and a seasonal activity bar showing which seasons it is most active (Spring, Summer, Fall, or Winter).</Text>
           <Text><strong>Top Plants Visited</strong> shows which flowering plants that bee was most often found on. You can click any plant image to see a larger photo.</Text>
           <Text>This information can help you understand what each bee species needs and which plants to grow if you want to attract specific bees to your area.</Text>
-          <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Keep in mind that data has been recorded since 2017 and some areas have more observations than others, so a region with fewer total records may not fully represent all the bees and plants that live there.</Text>
+          <Text fontSize="sm" fontStyle="italic" color="orange.700" bg="orange.50" px={3} py={2} borderRadius="md">Oregon State University Extension Service Master Melittologist Program volunteers have produced nearly 250,000 observations of more than 700 species of wild bees visiting nearly 2,000 species of flowering plants throughout the state. The data is extremely rich but has some spatial, temporal, and taxonomic bias.</Text>
         </DataContextInfo>
       </Box>
       <VStack spacing={{ base: 4, md: 6 }} align="stretch">
