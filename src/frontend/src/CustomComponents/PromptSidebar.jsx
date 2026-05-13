@@ -4,7 +4,6 @@ import {
     Button,
     Text,
     VStack,
-    Portal,
     Select,
     createListCollection,
     RadioCard,
@@ -190,18 +189,18 @@ const PromptSidebar = ({
                 <Select.Indicator />
               </Select.IndicatorGroup>
             </Select.Control>
-            <Portal>
-              <Select.Positioner>
-                <Select.Content>
-                  {overlays.items.map((overlay) => (
-                    <Select.Item item={overlay} key={overlay.value}>
-                      {overlay.label}
-                      <Select.ItemIndicator />
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Positioner>
-            </Portal>
+            
+            <Select.Positioner>
+              <Select.Content>
+                {overlays.items.map((overlay) => (
+                <Select.Item item={overlay} key={overlay.value}>
+                    {overlay.label}
+                    <Select.ItemIndicator />
+                </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+            
           </Select.Root>
 
           <Text mt="8px">Choose a location:</Text>

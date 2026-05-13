@@ -208,8 +208,13 @@ const MainContent = () => {
               placement="top"
             >
               <Drawer.Backdrop />
-              <Drawer.Content rounded="md" height="100%" overflowY="auto">
-                <Drawer.Body>
+              <Drawer.Content
+                roundedTop="md"
+                maxH="100dvh"
+                h="100dvh"
+                overflow="hidden"
+              >
+                <Drawer.Body overflowY="auto" pb="calc(env(safe-area-inset-bottom) + 1rem)">
                   <PromptSidebar
                     activePrompt={activePrompt}
                     setActivePrompt={setActivePrompt}
@@ -222,10 +227,18 @@ const MainContent = () => {
                     selectedCoords={selectedCoords}
                     setSelectedCoords={setSelectedCoords}
                   />
-                  <Button mt="2" w="100%" onClick={onClose}>
-                    Done
-                  </Button>
                 </Drawer.Body>
+                  <Flex
+                    p="4"
+                    borderTop="1px solid"
+                    borderColor="gray.200"
+                    bg="white"
+                    pb="calc(env(safe-area-inset-bottom) + 1rem)"
+                  >
+                    <Button w="100%" onClick={onClose}>
+                      Done
+                    </Button>
+                  </Flex>
               </Drawer.Content>
             </Drawer.Root>
 
