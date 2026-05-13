@@ -25,7 +25,7 @@ const InfoDialog = () => {
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content>
+          <Dialog.Content maxW={{ base: "90%", md: "lg" }} maxH="90%" overflowY="auto">
             <Dialog.Header>
               <Dialog.Title>About this resource</Dialog.Title>
             </Dialog.Header>

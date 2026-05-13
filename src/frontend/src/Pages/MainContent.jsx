@@ -208,7 +208,7 @@ const MainContent = () => {
               placement="top"
             >
               <Drawer.Backdrop />
-              <Drawer.Content rounded="md">
+              <Drawer.Content rounded="md" height="100%" overflowY="auto">
                 <Drawer.Body>
                   <PromptSidebar
                     activePrompt={activePrompt}
