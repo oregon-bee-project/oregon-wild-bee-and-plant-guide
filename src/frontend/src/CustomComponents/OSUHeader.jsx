@@ -93,6 +93,7 @@ const OSUHeader = () => {
                 letterSpacing="1px"
                 lineHeight="0.5"
                 color="white"
+                textAlign="left"
               >
                 OREGON WILD BEE AND PLANT GUIDE
             </Text>
