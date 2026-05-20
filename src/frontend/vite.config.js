@@ -5,7 +5,7 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: "/bee-plant-data-exploration/",
+  base: "/oregon-wild-bee-and-plant-guide/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
