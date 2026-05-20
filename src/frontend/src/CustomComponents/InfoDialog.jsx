@@ -25,9 +25,9 @@ const InfoDialog = () => {
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content>
+          <Dialog.Content maxW={{ base: "90%", md: "lg" }} maxH="90%" overflowY="auto">
             <Dialog.Header>
-              <Dialog.Title>About this resource</Dialog.Title>
+              <Dialog.Title>About the Oregon Wild Bee and Plant Guide</Dialog.Title>
             </Dialog.Header>
             <Dialog.Body>
               <p>
@@ -35,7 +35,7 @@ const InfoDialog = () => {
                   <li>
                     Outputs from the tool are based on bee-plant interaction data
                     collected by Oregon State University Extension Service Master
-                    Melittologist Program volunteers for the Oregon Bee Atlas. The
+                    Melittologist Program volunteers for the <a href="https://agsci.oregonstate.edu/bee-atlas" target="_blank" rel="noopener noreferrer" style={{ color: "blue", textDecoration: "underline", outline: "none" }}>Oregon Bee Atlas</a>. The
                     data is extremely rich but has some spatial, temporal, and
                     taxonomic bias.
                     <br />
