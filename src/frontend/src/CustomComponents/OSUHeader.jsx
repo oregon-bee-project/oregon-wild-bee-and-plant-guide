@@ -35,6 +35,8 @@ const OSUHeader = () => {
         {/* OSU Logo */}
         <Link
           href="https://oregonstate.edu/"
+          target="_blank"
+          rel="noopener noreferrer"
           _focus={{ outline: 'none' }}
           _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
         >
@@ -62,6 +64,8 @@ const OSUHeader = () => {
           <Stack spacing={0} pb={{ base: "5px", md: "10px" }}>
           <Link
               href="https://agsci.oregonstate.edu/"
+              target="_blank"
+              rel="noopener noreferrer"
               _hover={{
                 textDecoration: "underline",
                 textDecorationColor: "white"
@@ -81,17 +85,7 @@ const OSUHeader = () => {
                 <Text as="span" fontSize={{ base: "12px", md: "16px" }} color="#666666">»</Text>
               </Text>
             </Link>
-
-            <Link
-              href="https://agsci.oregonstate.edu/bee-atlas"
-              _hover={{
-                textDecoration: "underline",
-                textDecorationColor: "white"
-              }}
-              _focus={{ outline: 'none' }}
-              _focusVisible={{ outline: '1px solid white', outlineOffset: '2px' }}
-            >
-              <Text
+            <Text
                 fontSize={{ base: "18px", md: "24px" }}
                 fontFamily="Stratum2Light"
                 fontWeight="600"
@@ -99,10 +93,10 @@ const OSUHeader = () => {
                 letterSpacing="1px"
                 lineHeight="0.5"
                 color="white"
+                textAlign="left"
               >
-                OREGON BEE ATLAS
-              </Text>
-            </Link>
+                OREGON WILD BEE AND PLANT GUIDE
+            </Text>
           </Stack>
         </Box>
         <Box 
