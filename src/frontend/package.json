@@ -2,7 +2,7 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://kellen-sullivan.github.io/bee-plant-data-exploration",
+  "homepage": "https://kellen-sullivan.github.io/oregon-wild-bee-and-plant-guide",
   "type": "module",
   "scripts": {
     "dev": "vite",

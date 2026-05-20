@@ -88,7 +88,7 @@ const InteractiveMap = ({
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "./custom-map-style.json",
+      style: `${import.meta.env.BASE_URL}custom-map-style.json`,
       center: [-120.55, 43.8],
       zoom: 6,
     });
@@ -109,7 +109,7 @@ const InteractiveMap = ({
         // 1. Add Source
         map.addSource(sourceId, {
           type: "geojson",
-          data: `/bee-plant-data-exploration/GeoJSON/${item.value}.json`,
+          data: `${import.meta.env.BASE_URL}GeoJSON/${item.value}.json`,
           generateId: true,
         });
 
