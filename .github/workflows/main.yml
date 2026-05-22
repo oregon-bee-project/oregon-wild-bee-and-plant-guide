@@ -70,6 +70,7 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend to GitHub Pages
     needs: build
+    # deployment safeguard: only deploy on push to main or on PRs
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request'
 
     environment:
