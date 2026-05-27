@@ -11,7 +11,7 @@ from collections import Counter
 
 import requests
 
-BASE_URL = "https://bee-data-api.onrender.com"
+BASE_URL = "https://oregon-wild-bee-and-plant-guide.onrender.com/"
 COORDS = {"lat": 44.56, "long": -123.26, "region_type": "county"}
 HEAVY_GET = f"{BASE_URL}/api/detailed-report/"
 HEAVY_EXPORT = f"{BASE_URL}/api/export-detailed-pdf/"

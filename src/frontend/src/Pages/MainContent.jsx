@@ -22,7 +22,7 @@ const MainContent = () => {
   const { open, onOpen, onClose } = useDisclosure();
 
   const API_BASE = import.meta.env.PROD
-    ? "https://bee-data-api.onrender.com" // this is what the url prefix will be in production
+    ? "https://oregon-wild-bee-and-plant-guide.onrender.com/" // this is what the url prefix will be in production
     : ""; // this is what the url prefix will be in dev
 
   const fetchLocationData = async () => {
