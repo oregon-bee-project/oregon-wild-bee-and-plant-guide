@@ -17,7 +17,7 @@ app = FastAPI()
 # This is the list of "origins" (websites) that are allowed to make requests.
 # Even if you aren't using it yet, it's good practice to have.
 origins = [
-    "https://kellen-sullivan.github.io", # Your GitHub Pages URL
+    "https://oregon-bee-project.github.io", # Your public GitHub Pages URL
     "http://localhost:5173",         # Your local dev environment (Vite default)
 ]
 
