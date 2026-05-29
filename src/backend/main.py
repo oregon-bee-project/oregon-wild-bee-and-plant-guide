@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import search_by_location as sl
 import get_best_plants as bp
-from data_store import get_datasets
+import parse_viz as pv
 import flatten_summary as fs
 from create_pdf import generate_pdf_from_rows as g_pdf
 from create_pdf import generate_detailed_pdf as g_detailed_pdf
@@ -29,6 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+full_df = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-subset-labels.viz")
+inat_key = pv.parse_viz_to_dataframe("../data/b-team/plant-pollinators-OBA-2025-assigned-taxa.viz")
+
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -45,7 +49,6 @@ def health():
 
 @app.get("/api/location-data/")
 def location_root(lat: float, long: float, region_type: str):
-    full_df, inat_key = get_datasets()
     response_json = {
         "response": [],
         "region_type": region_type,
@@ -73,7 +76,6 @@ def detailed_report_root(
     species_offset: int = Query(default=0, ge=0),
     species_limit: int = Query(default=25, ge=1, le=100),
 ):
-    full_df, inat_key = get_datasets()
     response_json = {
         "response": [],
         "region_type": region_type,
@@ -103,7 +105,6 @@ def detailed_report_root(
 
 @app.post("/api/export-detailed-pdf/")
 def export_detailed_pdf(payload: dict):
-    full_df, inat_key = get_datasets()
     selected = payload.get("selectedCoords")
     if not selected:
         raise HTTPException(status_code=400, detail="Missing selectedCoords in request.")
@@ -160,7 +161,6 @@ def export_detailed_pdf(payload: dict):
 
 @app.get("/api/best-plants-to-plant/")
 def best_plants_root(lat: float, long: float, region_type: str = "county"):
-    full_df, inat_key = get_datasets()
     response_json = {
         "response": [],
         "error": False,
@@ -236,7 +236,6 @@ def best_plants_root(lat: float, long: float, region_type: str = "county"):
 
 @app.post("/api/export-pdf/")
 def export_pdf(payload: dict):
-    full_df, inat_key = get_datasets()
     selected = payload.get("selectedCoords")
     if not selected:
         raise HTTPException(status_code=400, detail="Missing selectedCoords in request.")
