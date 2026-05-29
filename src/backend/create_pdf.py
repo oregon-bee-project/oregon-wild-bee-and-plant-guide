@@ -1,19 +1,39 @@
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, KeepTogether, Image, PageBreak
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, KeepTogether, Image, PageBreak
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 import os
 import io
 
-LOGO_PATH = os.path.join(os.path.dirname(__file__), "../data/OSU-logo.png")
+from pdf_content import (
+    CITATION_PARAGRAPHS,
+    COMMON_SUMMARY_INTRO,
+    DETAILED_REPORT_INTRO,
+    DISCLAIMER_TEXT,
+)
+
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "../data/OSU-MM.png")
 
 
-def _get_logo(width=2*inch):
-    """Return a reportlab Image of the OSU logo if the file exists, else None."""
-    if os.path.exists(LOGO_PATH):
-        return Image(LOGO_PATH, width=width, height=width * 0.4)
-    return None
+def _get_logo(width=3 * inch):
+    """Return a centered reportlab Image of the OSU Master Melittologist logo if present."""
+    if not os.path.exists(LOGO_PATH):
+        return None
+    try:
+        from reportlab.lib.utils import ImageReader
+
+        reader = ImageReader(LOGO_PATH)
+        img_w, img_h = reader.getSize()
+        if img_w <= 0 or img_h <= 0:
+            return None
+        aspect = img_h / img_w
+        height = width * aspect
+        logo = Image(LOGO_PATH, width=width, height=height)
+        logo.hAlign = "CENTER"
+        return logo
+    except Exception:
+        return None
 
 
 def _make_styles():
@@ -25,15 +45,8 @@ def _make_styles():
     return s, body, bold_body, small, center
 
 
-_DISCLAIMER_TEXT = (
-    "Keep in mind that data has been recorded since 2017 and some areas have "
-    "more observations than others, so a region with fewer total records may "
-    "not fully represent all the bees and plants that live there."
-)
-
-
 def _build_context_block(description, styles):
-    """Return a list of flowables with a context blurb and disclaimer for the top of a report."""
+    """Return flowables with a context blurb and disclaimer."""
     s = styles
     context_style = ParagraphStyle(
         "PdfContext", parent=s["BodyText"], fontSize=9, leading=13,
@@ -47,8 +60,27 @@ def _build_context_block(description, styles):
     elements = []
     elements.append(Paragraph(description, context_style))
     elements.append(Spacer(1, 6))
-    elements.append(Paragraph(_DISCLAIMER_TEXT, disclaimer_style))
+    elements.append(Paragraph(DISCLAIMER_TEXT, disclaimer_style))
     elements.append(Spacer(1, 16))
+    return elements
+
+
+def _build_citations_block(styles):
+    """Acknowledgments and funding citations at end of report."""
+    s = styles
+    heading_style = ParagraphStyle(
+        "PdfCitationsHeading", parent=s["Heading2"], fontSize=12, spaceAfter=8,
+    )
+    citation_style = ParagraphStyle(
+        "PdfCitation", parent=s["BodyText"], fontSize=8, leading=11,
+        fontName="Helvetica-Oblique", textColor=colors.grey, wordWrap="CJK",
+        spaceAfter=8,
+    )
+    elements = [
+        Paragraph("Acknowledgments", heading_style),
+    ]
+    for paragraph in CITATION_PARAGRAPHS:
+        elements.append(Paragraph(paragraph, citation_style))
     return elements
 
 
@@ -78,23 +110,19 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
 
     elements = []
 
-    # Logo header
-    logo = _get_logo(width=1.8*inch)
+    # Front matter: logo, title, how to read this summary
+    logo = _get_logo(width=1.75 * inch)
     if logo:
         elements.append(logo)
-        elements.append(Spacer(1, 6))
+        elements.append(Spacer(1, 0.15 * inch))
 
-    # Title
-    elements.append(Paragraph(f"{title} — {location}", s["Title"]))
+    title_style = ParagraphStyle(
+        "CommonTitle", parent=s["Title"], fontSize=18, leading=22, alignment=1,
+    )
+    elements.append(Paragraph(f"{title} — {location}", title_style))
     elements.append(Spacer(1, 12))
 
-    elements.extend(_build_context_block(
-        "This summary shows the most commonly observed bees and plants in your selected area. "
-        "The data comes from real observations recorded by bee researchers and community scientists "
-        "across Oregon. An observation is a single recorded instance of a bee being found on a "
-        "specific plant.",
-        s,
-    ))
+    elements.extend(_build_context_block(COMMON_SUMMARY_INTRO, s))
 
     # Extract data
     num_rows_value = None
@@ -104,7 +132,6 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
     common_plant = None
     common_plant_count = None
     cp_top_bees = None
-
     common_plant_sci = None
 
     for row in rows:
@@ -161,6 +188,10 @@ def generate_pdf_from_rows(rows, title="Common Bee and Plant Report", location="
         elements.extend(format_common_bees(cp_top_bees, body_style))
         elements.append(Spacer(1, 12))
 
+    # End matter: citations
+    elements.append(PageBreak())
+    elements.append(KeepTogether(_build_citations_block(s)))
+
     doc.title = title
     doc.author = "Oregon Bee Project"
     doc.subject = "Common Bee and Plant Report"
@@ -187,13 +218,11 @@ def generate_detailed_pdf(stats, title="Detailed Bee and Plant Report", location
     doc_elements = []
 
     # --- Cover page ---
-    logo = _get_logo(width=3*inch)
+    logo = _get_logo(width=3 * inch)
     if logo:
-        # Center logo vertically on the cover with spacers
         doc_elements.append(Spacer(1, page_h * 0.2))
-        logo.hAlign = "CENTER"
         doc_elements.append(logo)
-        doc_elements.append(Spacer(1, 0.4*inch))
+        doc_elements.append(Spacer(1, 0.4 * inch))
 
     cover_title_style = ParagraphStyle(
         "CoverTitle", parent=s["Title"], fontSize=24, leading=30, alignment=1
@@ -206,23 +235,23 @@ def generate_detailed_pdf(stats, title="Detailed Bee and Plant Report", location
     )
 
     doc_elements.append(Paragraph(title, cover_title_style))
-    doc_elements.append(Spacer(1, 0.2*inch))
+    doc_elements.append(Spacer(1, 0.2 * inch))
     doc_elements.append(Paragraph(location, cover_sub_style))
-    doc_elements.append(Spacer(1, 0.3*inch))
+    doc_elements.append(Spacer(1, 0.3 * inch))
 
     summary_fields = [
         ("Total Observations", stats.get("numRows")),
-        ("Unique Bee Species",  stats.get("numUniqueBees")),
+        ("Unique Bee Species", stats.get("numUniqueBees")),
         ("Unique Plant Species", stats.get("numUniquePlants")),
-        ("Males Observed",      stats.get("totalMales")),
-        ("Females Observed",    stats.get("totalFemales")),
+        ("Males Observed", stats.get("totalMales")),
+        ("Females Observed", stats.get("totalFemales")),
     ]
     for label, value in summary_fields:
         if value is not None:
             doc_elements.append(Paragraph(f"{label}: <b>{value}</b>", cover_meta_style))
             doc_elements.append(Spacer(1, 4))
 
-    doc_elements.append(Spacer(1, 0.3*inch))
+    doc_elements.append(Spacer(1, 0.3 * inch))
     doc_elements.append(Paragraph("Oregon Bee Project", cover_meta_style))
 
     doc_elements.append(PageBreak())
@@ -233,23 +262,17 @@ def generate_detailed_pdf(stats, title="Detailed Bee and Plant Report", location
             import detailed_report as dr
             heatmap_png = dr.heatmap_as_image(filtered_df)
             if heatmap_png:
-                heatmap_img = Image(io.BytesIO(heatmap_png), width=7*inch, height=4.5*inch)
+                heatmap_img = Image(io.BytesIO(heatmap_png), width=7 * inch, height=4.5 * inch)
                 heatmap_img.hAlign = "CENTER"
-                doc_elements.append(Spacer(1, 0.3*inch))
+                doc_elements.append(Spacer(1, 0.3 * inch))
                 doc_elements.append(Paragraph("Observation Density Map", s["Heading2"]))
-                doc_elements.append(Spacer(1, 0.15*inch))
+                doc_elements.append(Spacer(1, 0.15 * inch))
                 doc_elements.append(heatmap_img)
                 doc_elements.append(PageBreak())
         except Exception:
             pass
 
-    # --- Context block ---
-    doc_elements.extend(_build_context_block(
-        "This report lists every bee species observed in your selected area. The data comes from "
-        "real observations recorded by bee researchers and community scientists across Oregon. "
-        "An observation is a single recorded instance of a bee being found on a specific plant.",
-        s,
-    ))
+    doc_elements.extend(_build_context_block(DETAILED_REPORT_INTRO, s))
 
     # --- Species detail pages ---
     h2_style = s["Heading2"]

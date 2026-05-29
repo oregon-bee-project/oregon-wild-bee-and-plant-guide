@@ -26,7 +26,7 @@ const DataDisplay = ({
   // On click of export, send post request to backend to generate PDF
   // Render API base
   const API_BASE = import.meta.env.PROD
-    ? "https://oregon-wild-bee-and-plant-guide.onrender.com/" // this is what the url prefix will be in production
+    ? "https://oregon-wild-bee-and-plant-guide.onrender.com" // this is what the url prefix will be in production
     : "";
 
   const exportEndpointMap = {
