@@ -16,7 +16,7 @@ Pollinator-support decisions are often made with limited local interaction data,
 - Explore results in a responsive interactive map experience that stays dependable, even during periods of heavier use.
 
 ## Try It Out 
-- Link to the [Oregon Wild Bee and Plant Guide](https://kellen-sullivan.github.io/oregon-wild-bee-and-plant-guide/) live site
+- Link to the [Oregon Wild Bee and Plant Guide](https://oregon-bee-project.github.io/oregon-wild-bee-and-plant-guide/) live site
 
 ### System and Platform Notes
 
